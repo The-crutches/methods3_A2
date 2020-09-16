@@ -99,9 +99,16 @@ CleanUpData <- function(Demo,LU,Word){
 }
 
 # Load training Data
-
+df <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_P1/autism_df.csv")
 
 #- recreate the models you chose last time (just write the code again and apply it to Train Data)
+train_chi <- lmerTest::lmer(CHI_MLU ~ VISIT*Diagnosis+I(VISIT^2)+(1+I(VISIT^2)|SUBJ),
+                      df,
+                     REML = FALSE)
+train_mot <- lmerTest::lmer(MOT_MLU ~ VISIT+Diagnosis+
+             (1+VISIT|SUBJ),
+                      df,
+                     REML = FALSE)
 
 
 #- calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
@@ -110,11 +117,62 @@ CleanUpData <- function(Demo,LU,Word){
 
 #- create the test dataset (apply the code from assignment 1 or my function to clean up the 3 test datasets)
 # Test data
+demo <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/demo_test.csv")
+LU <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/LU_test.csv")
+token <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/token_test.csv")
+
+data_test <- CleanUpData(demo, LU, token)
+
+k = 6
+folds = createFolds(unique(data_test$Child.ID, k = k, list = TRUE, returnTrain = FALSE)
+
+trainRMSE= rep(NA, k)
+testRMSE = rep(NA, k)
+
+i = 1
+for (fold in folds){
+  train = subset(data_test, !(Child.ID %in% fold))
+  test = subset(data_test, Child.ID %in% fold)
+  model = lmer(CHI_MLU ~ Visit*Diagnosis+(1|Child.ID), train)
+  test$prediction = predict(model, test, allow.new.levels = TRUE)
+  train$prediction = fitted(model)
+  trainRMSE[i] = rmse(train$CHI_MLU, fitted(model))
+  testRMSE[i] = rmse(test$CHI_MLU, test$prediction)
+  i = i + 1
+}
+
+trainRMSE
+testRMSE
+
+
+###########################################
+
+
+k = 6
+folds = createFolds(unique(df$SUBJ, k = k, list = TRUE, returnTrain = FALSE)
+
+trainRMSE= rep(NA, k)
+testRMSE = rep(NA, k)
+
+i = 1
+for (fold in folds){
+  train = subset(df, !(SUBJ %in% fold))
+  test = subset(df, SUBJ %in% fold)
+  model = lmer(CHI_MLU ~ VISIT*Diagnosis+(1|SUBJ), train)
+  test$prediction = predict(model, test, allow.new.levels = TRUE)
+  train$prediction = fitted(model)
+  trainRMSE[i] = RMSE(train$CHI_MLU, fitted(model))
+  testRMSE[i] = RMSE(test$CHI_MLU, test$prediction)
+  i = i + 1
+}
+
+trainRMSE
+testRMSE
 
 #- test the performance of the models on the test data (Tips: google the functions "predict()")
 
 
-#- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval())
+#- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval)
 
 ```
 
