@@ -253,3 +253,11 @@ Then try to find the best possible predictive model of ChildMLU, that is, the on
 ### OPTIONAL: Exercise 5): Using Lasso for model selection
 Welcome to the last secret exercise. If you have already solved the previous exercises, and still there's not enough for you, you can expand your expertise by learning about penalizations. Check out this tutorial: http://machinelearningmastery.com/penalized-regression-in-r/ and make sure to google what penalization is, with a focus on L1 and L2-norms. Then try them on your data!
 
+
+```{r}
+hey <- lm(types_CHI~Diagnosis*Visit, data = data_test)
+summary(hey)
+hey1 <- lm(types_CHI~Diagnosis+Visit, data = data_test)
+summary(hey1)
+```
+
