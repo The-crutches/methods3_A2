@@ -80,7 +80,7 @@ CleanUpData <- function(Demo,LU,Word){
      dplyr::select(Child.ID, ADOS, ExpressiveLangRaw, MullenRaw, Socialization) %>%
      rename(Ados1 = ADOS, 
             verbalIQ1 = ExpressiveLangRaw, 
-            nonVerbalIQ1 = MullenRaw,
+            nonverbalIQ1 = MullenRaw,
             Socialization1 = Socialization) 
   
   Data=merge(Data, Data1, all=T) %>%
@@ -98,51 +98,39 @@ CleanUpData <- function(Demo,LU,Word){
   return(Data)
 }
 
+
+
 # Load training Data
-df <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_P1/autism_df.csv")
+train_df <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/data_clean.csv")
 
 #- recreate the models you chose last time (just write the code again and apply it to Train Data)
-train_chi <- lmerTest::lmer(CHI_MLU ~ VISIT*Diagnosis+I(VISIT^2)+(1+I(VISIT^2)|SUBJ),
-                      df,
+#train_chi <- lmerTest::lmer(CHI_MLU ~ Visit*Diagnosis+I(Visit^2)+(1+I(VISIT^2)|Child.ID),
+                      train_df,
                      REML = FALSE)
-train_mot <- lmerTest::lmer(MOT_MLU ~ VISIT+Diagnosis+
+#train_mot <- lmerTest::lmer(MOT_MLU ~ VISIT+Diagnosis+
              (1+VISIT|SUBJ),
-                      df,
+                      train_df,
                      REML = FALSE)
+max <-  lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_df, REML = F)
 
 
 #- calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
 
 
+train_df <- train_df[!is.na(train_df$CHI_MLU), 1:20] 
+
+rmse(train_df$CHI_MLU, fitted(max))
+
+
 
 #- create the test dataset (apply the code from assignment 1 or my function to clean up the 3 test datasets)
 # Test data
-demo <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/demo_test.csv")
+Demo <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/demo_test.csv")
 LU <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/LU_test.csv")
 token <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/token_test.csv")
 
-data_test <- CleanUpData(demo, LU, token)
+df_test <- CleanUpData(Demo, LU, token)
 
-k = 6
-folds = createFolds(unique(data_test$Child.ID, k = k, list = TRUE, returnTrain = FALSE)
-
-trainRMSE= rep(NA, k)
-testRMSE = rep(NA, k)
-
-i = 1
-for (fold in folds){
-  train = subset(data_test, !(Child.ID %in% fold))
-  test = subset(data_test, Child.ID %in% fold)
-  model = lmer(CHI_MLU ~ Visit*Diagnosis+(1|Child.ID), train)
-  test$prediction = predict(model, test, allow.new.levels = TRUE)
-  train$prediction = fitted(model)
-  trainRMSE[i] = rmse(train$CHI_MLU, fitted(model))
-  testRMSE[i] = rmse(test$CHI_MLU, test$prediction)
-  i = i + 1
-}
-
-trainRMSE
-testRMSE
 
 
 ###########################################
@@ -170,7 +158,10 @@ trainRMSE
 testRMSE
 
 #- test the performance of the models on the test data (Tips: google the functions "predict()")
+df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
 
+rmse(df_test$CHI_MLU, fitted(max))
+predict(max, newdata = df_test, allow.new.levels = TRUE)
 
 #- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval)
 
@@ -198,6 +189,28 @@ In this exercise you have to use cross-validation to calculate the predictive er
 #- Create the basic model of ChildMLU as a function of Time and Diagnosis (don't forget the random effects!).
 
 #- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
+
+k = 6
+folds = createFolds(unique(data_test$Child.ID, k = k, list = TRUE, returnTrain = FALSE)
+
+trainRMSE= rep(NA, k)
+testRMSE = rep(NA, k)
+
+i = 1
+for (fold in folds){
+  train = subset(train_df, !(SUBJ %in% fold))
+  test = subset(train_df, SUBJ %in% fold)
+  model = lmer(CHI_MLU ~ I(VISIT^2)+VISIT*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|SUBJ), train, REML = F)
+  test$prediction = predict(model, test, allow.new.levels = TRUE)
+  train$prediction = fitted(model)
+  trainRMSE[i] = rmse(train$CHI_MLU, fitted(model))
+  testRMSE[i] = rmse(test$CHI_MLU, test$prediction)
+  i = i + 1
+}
+
+trainRMSE
+testRMSE
+
 
 #- Report the results and comment on them. 
 
