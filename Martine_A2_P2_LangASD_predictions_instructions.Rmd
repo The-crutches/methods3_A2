@@ -1,8 +1,8 @@
 ---
 title: "Assignment 2 - Language Development in ASD - Making predictions"
-author: "Riccardo Fusaroli"
-date: "August 9, 2019"
-output: html_document
+author: "Martine Lind Jensen"
+date: "16-09-2020"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -46,8 +46,7 @@ How did your models from last time perform? In this exercise you have to compare
 
 
 ```{r, include = FALSE}
-
-pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret)
+pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret, tidyverse)
 
 ## Clean up function, included to inspire you
 
@@ -97,22 +96,38 @@ CleanUpData <- function(Demo,LU,Word){
 
   return(Data)
 }
+```
 
+
+```{r, include = FALSE}
 # Load training Data
+
+train_data <- read_csv("data_clean.csv")
+train_data <- train_data[!is.na(train_data$CHI_MLU), 1:20]
 
 
 #- recreate the models you chose last time (just write the code again and apply it to Train Data)
+model <- lmer(CHI_MLU ~ I(Visit^2)+ Visit*Diagnosis + (1+I(Visit^2)|Child.ID), train_data, REML=F)
+bmaxv <- lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_data, REML = F)
 
 
 #- calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
 
-
+rmse(train_data$CHI_MLU, predict(model))
 
 #- create the test dataset (apply the code from assignment 1 or my function to clean up the 3 test datasets)
 # Test data
 
+Demo <- read_csv("demo_test.csv")
+LU <- read_csv("LU_test.csv")
+Word <- read_csv("token_test.csv")
+
+df_test <- CleanUpData(Demo,LU,Word)
+df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20]
+
 #- test the performance of the models on the test data (Tips: google the functions "predict()")
 
+rmse(df_test$CHI_MLU, predict(bmaxv))
 
 #- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval())
 
@@ -140,6 +155,17 @@ In this exercise you have to use cross-validation to calculate the predictive er
 #- Create the basic model of ChildMLU as a function of Time and Diagnosis (don't forget the random effects!).
 
 #- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
+
+k = 6
+folds = createFolds(unique(train_data$SUBJ), k = k, list = TRUE, returnTrain = FALSE)
+
+trainRMSE = rep(NA, k)
+testRMSE = rep(NA,k)
+
+i=1
+for(fold in folds){
+  train=subset(train_data,)
+}
 
 #- Report the results and comment on them. 
 
