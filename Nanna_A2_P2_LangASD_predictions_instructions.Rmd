@@ -119,7 +119,7 @@ train_mot <- lmerTest::lmer(MOT_MLU ~ Visit+Diagnosis+
 #- calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
 
 data_clean <- data_clean[!is.na(data_clean$CHI_MLU), 1:20] 
-
+df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
 
 rmse(data_clean$CHI_MLU, fitted(train_chi))
 rmse(df$CHI_MLU, fitted(bmaxv))
@@ -141,10 +141,11 @@ df_test <- CleanUpData(Demo, LU, token)
 predict(bmaxv, newdata = df_test, allow.new.levels = TRUE)
 
 
+rmse(df_test$CHI_MLU, predict(bmaxv))
+
 
 #- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval())
 
-predictInterval(bmaxv, df_test)
 
 ```
 
@@ -168,6 +169,8 @@ In this exercise you have to use cross-validation to calculate the predictive er
 
 ```{r}
 #- Create the basic model of ChildMLU as a function of Time and Diagnosis (don't forget the random effects!).
+
+
 
 #- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
 
