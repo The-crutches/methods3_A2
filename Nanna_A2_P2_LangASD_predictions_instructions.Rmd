@@ -100,21 +100,64 @@ CleanUpData <- function(Demo,LU,Word){
 
 # Load training Data
 
+data_clean <- read.csv("data_clean.csv")
+#rename variables to match
+
 
 #- recreate the models you chose last time (just write the code again and apply it to Train Data)
+train_chi <- lmerTest::lmer(CHI_MLU ~ Visit*Diagnosis+I(Visit^2)+(1+I(Visit^2)|Child.ID),
+                      data_clean,
+                     REML = FALSE)
+summary(train_chi)
+
+bmaxv <- lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), data_clean, REML = F)
+summary(bmaxv)
+
+train_mot <- lmerTest::lmer(MOT_MLU ~ Visit+Diagnosis+
+             (1+Visit|Child.ID),
+                      data_clean,
+                     REML = FALSE)
 
 
 #- calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
 
+data_clean <- data_clean[!is.na(data_clean$CHI_MLU), 1:20] 
+df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
 
+rmse(data_clean$CHI_MLU, fitted(train_chi))
+rmse(df$CHI_MLU, fitted(bmaxv))
+
+##What is a good rmse-value?
 
 #- create the test dataset (apply the code from assignment 1 or my function to clean up the 3 test datasets)
 # Test data
 
+Demo <- read_csv("demo_test.csv")
+LU <- read_csv("LU_test.csv")
+token <- read_csv("token_test.csv")
+
+df_test <- CleanUpData(Demo, LU, token)
+
+
 #- test the performance of the models on the test data (Tips: google the functions "predict()")
+
+#This shows the predicted MLU
+predict_chi <- predict(train_chi, newdata = df_test, allow.new.levels = TRUE)
+
+predict_chi
+
+#the fit of the predicted 
+rmse(df_test$CHI_MLU, predict_chi)
+
+mean(df_test$CHI_MLU)
+#This doesn't seem like a good performance at all! :(
+
+#Plot the predicted with the actual data
+
 
 
 #- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval())
+
 
 ```
 
@@ -138,6 +181,8 @@ In this exercise you have to use cross-validation to calculate the predictive er
 
 ```{r}
 #- Create the basic model of ChildMLU as a function of Time and Diagnosis (don't forget the random effects!).
+
+
 
 #- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
 
