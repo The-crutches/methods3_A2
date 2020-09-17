@@ -108,7 +108,10 @@ data_clean <- read.csv("data_clean.csv")
 train_chi <- lmerTest::lmer(CHI_MLU ~ Visit*Diagnosis+I(Visit^2)+(1+I(Visit^2)|Child.ID),
                       data_clean,
                      REML = FALSE)
+summary(train_chi)
+
 bmaxv <- lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), data_clean, REML = F)
+summary(bmaxv)
 
 train_mot <- lmerTest::lmer(MOT_MLU ~ Visit+Diagnosis+
              (1+Visit|Child.ID),
@@ -124,7 +127,7 @@ df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20]
 rmse(data_clean$CHI_MLU, fitted(train_chi))
 rmse(df$CHI_MLU, fitted(bmaxv))
 
-##What is a good rmse-value: A value near 1.0 indicates an almost perfect fit while values near zero result from a model where the predictions have no linear association with the outcome. One other advantage of this number is that it makes comparisons between different outcomes easy since it is unitless.
+##What is a good rmse-value?
 
 #- create the test dataset (apply the code from assignment 1 or my function to clean up the 3 test datasets)
 # Test data
@@ -138,10 +141,19 @@ df_test <- CleanUpData(Demo, LU, token)
 
 #- test the performance of the models on the test data (Tips: google the functions "predict()")
 
-predict(bmaxv, newdata = df_test, allow.new.levels = TRUE)
+#This shows the predicted MLU
+predict_chi <- predict(train_chi, newdata = df_test, allow.new.levels = TRUE)
 
+predict_chi
 
-rmse(df_test$CHI_MLU, predict(bmaxv))
+#the fit of the predicted 
+rmse(df_test$CHI_MLU, predict_chi)
+
+mean(df_test$CHI_MLU)
+#This doesn't seem like a good performance at all! :(
+
+#Plot the predicted with the actual data
+
 
 
 #- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval())
