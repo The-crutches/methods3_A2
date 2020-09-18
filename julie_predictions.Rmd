@@ -135,31 +135,6 @@ token <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/token_test.csv")
 df_test <- CleanUpData(Demo, LU, token)
 
 
-
-###########################################
-
-
-k = 6
-folds = createFolds(unique(df$SUBJ, k = k, list = TRUE, returnTrain = FALSE)
-
-trainRMSE= rep(NA, k)
-testRMSE = rep(NA, k)
-
-i = 1
-for (fold in folds){
-  train = subset(df, !(SUBJ %in% fold))
-  test = subset(df, SUBJ %in% fold)
-  model = lmer(CHI_MLU ~ VISIT*Diagnosis+(1|SUBJ), train)
-  test$prediction = predict(model, test, allow.new.levels = TRUE)
-  train$prediction = fitted(model)
-  trainRMSE[i] = RMSE(train$CHI_MLU, fitted(model))
-  testRMSE[i] = RMSE(test$CHI_MLU, test$prediction)
-  i = i + 1
-}
-
-trainRMSE
-testRMSE
-
 #- test the performance of the models on the test data (Tips: google the functions "predict()")
 
 #This shows the predicted MLU
@@ -210,35 +185,72 @@ In this exercise you have to use cross-validation to calculate the predictive er
 
 #- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
 
-crossvalid <- function(folds, k, mod){
+train_df <- train_df[!is.na(train_df$Socialization), 1:20] 
 
-#Lav kun med train_df 
+### MARTINE ####
+
+m2 <- lmer(CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + (1+I(Visit^2)|Child.ID), train_df, REML = FALSE)
+
+
+
+max <-  lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_df, REML = F)
+
+
+
+#- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
+
 k = 6
 folds = createFolds(unique(train_df$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
-
 trainRMSE= rep(NA, k)
 testRMSE = rep(NA, k)
-
 i = 1
 for (fold in folds){
   train = subset(train_df, !(Child.ID %in% fold))
   test = subset(train_df, Child.ID %in% fold)
-  model = lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis+
-  verbalIQ1+(1|Child.ID), train)
+  model = lmer(CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + (1+I(Visit^2)|Child.ID), train, REML = FALSE)
   test$prediction = predict(model, test, allow.new.levels = TRUE)
   train$prediction = fitted(model)
-  trainRMSE[i] = rmse(train$CHI_MLU, fitted(model))
-  testRMSE[i] = rmse(test$CHI_MLU, test$prediction)
+  trainRMSE[i] = RMSE(train$CHI_MLU, fitted(model))
+  testRMSE[i] = RMSE(test$CHI_MLU, test$prediction)
   i = i + 1
 }
-
-result = (trainRMSE + testRMSE)
-#mangler det sidste
+trainRMSE
+testRMSE
 
 
 #- Report the results and comment on them. 
 
 #- Now try to find the best possible predictive model of ChildMLU, that is, the one that produces the best cross-validated results.
+
+k = 6
+
+
+# Cross validation function
+cross_valid <- function(data, k, mod){
+folds = createFolds(unique(train_df$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+trainRMSE_new= rep(NA, k)
+testRMSE_new = rep(NA, k)
+
+i = 1
+for (fold in folds){
+  train = subset(train_df, !(Child.ID %in% fold))
+  test = subset(train_df, Child.ID %in% fold)
+  model = lmer(mod, train)
+  test$prediction = predict(model, test, allow.new.levels = TRUE)
+  train$prediction = fitted(model)
+  trainRMSE_new[i] = RMSE(train$CHI_MLU, fitted(model))
+  testRMSE_new[i] = RMSE(test$CHI_MLU, test$prediction)
+  i = i + 1
+}
+result = data.frame(trainRMSE, testRMSE)
+  return(result)
+}
+
+#testing it
+max <-  lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_df, REML = F)
+cv_test <- cross_valid(train_df, 6, max)
+cv_test
+
 
 # Bonus Question 1: What is the effect of changing the number of folds? Can you plot RMSE as a function of number of folds?
 # Bonus Question 2: compare the cross-validated predictive error against the actual predictive error on the test data
