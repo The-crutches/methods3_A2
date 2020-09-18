@@ -245,6 +245,50 @@ You want to evaluate:
 
 - how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child)
 
+#A better solution 
+```{r}
+#Finding BERNIE
+Bernie <- subset(df_test, Child.ID == 4)
+
+#Subsetting for TD
+test_TD <- subset(df_test, Diagnosis == "TD")
+
+#average for TD child at each visit
+
+pacman::p_load(data.table)
+
+meanMLUTD <- aggregate(test_TD[, 12], list(test_TD$Visit), mean)
+
+meanMLUTD <- rename(meanMLUTD, "Visit" = "Group.1")
+meanMLUTD <- rename(meanMLUTD, "mean_MLU_TD" = "CHI_MLU")
+
+#Inserting the mean in Bernies dataset
+Bernie <- merge(Bernie, meanMLUTD, by = "Visit")
+
+#Calculating the absolute difference
+Bernie$AD_TD <- (Bernie$CHI_MLU - Bernie$mean_MLU_TD )
+
+
+#Subsetting for ASD
+test_ASD <- subset(df_test, Diagnosis == "ASD")
+
+#average for TD child at each visit
+
+meanMLUASD <- aggregate(test_ASD[, 12], list(test_ASD$Visit), mean)
+
+meanMLUASD <- rename(meanMLUASD, c("Visit" = "Group.1", "mean_MLU_ASD" = "x"))
+
+#Inserting the mean in Bernies dataset
+Bernie <- merge(Bernie, meanMLUASD, by = "Visit")
+
+#Calculating the absolute difference
+Bernie$AD_ASD <- (Bernie$CHI_MLU - Bernie$mean_MLU_ASD )
+
+```
+
+
+
+#NEdenstående er lavet af Julie og NAnananan
 ```{r}
 
 test_TD <- subset(df_test, Diagnosis == "TD")
@@ -286,7 +330,7 @@ test_TD5$Bernie <- Bernie$CHI_MLU[5]- test_TD5$mean5MLU
 test_TD6$Bernie <- Bernie$CHI_MLU[6]- test_TD6$mean6MLU
 
 
-
+#Noget andet
 pred_max <- predict(bmaxv, newdata = df_test, allow.new.levels = TRUE)
 
 df_test <- data.frame(df_test , pred_max)
