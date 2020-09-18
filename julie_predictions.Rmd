@@ -167,6 +167,8 @@ predict_chi <- predict(max, newdata = df_test, allow.new.levels = TRUE)
 
 predict_chi
 
+df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
+
 #the fit of the predicted 
 rmse(df_test$CHI_MLU, predict_chi)
 
@@ -176,7 +178,7 @@ mean(df_test$CHI_MLU)
 
 
 
-df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
+
 
 
 #- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval)
@@ -208,19 +210,21 @@ In this exercise you have to use cross-validation to calculate the predictive er
 
 #- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
 
+crossvalid <- function(folds, k, mod){
 
 #Lav kun med train_df 
 k = 6
-folds = createFolds(unique(data_test$Child.ID, k = k, list = TRUE, returnTrain = FALSE)
+folds = createFolds(unique(train_df$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
 
 trainRMSE= rep(NA, k)
 testRMSE = rep(NA, k)
 
 i = 1
 for (fold in folds){
-  train = subset(train_df, !(SUBJ %in% fold))
-  test = subset(train_df, SUBJ %in% fold)
-  model = lmer(CHI_MLU ~ I(VISIT^2)+VISIT*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|SUBJ), train, REML = F)
+  train = subset(train_df, !(Child.ID %in% fold))
+  test = subset(train_df, Child.ID %in% fold)
+  model = lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis+
+  verbalIQ1+(1|Child.ID), train)
   test$prediction = predict(model, test, allow.new.levels = TRUE)
   train$prediction = fitted(model)
   trainRMSE[i] = rmse(train$CHI_MLU, fitted(model))
@@ -228,8 +232,8 @@ for (fold in folds){
   i = i + 1
 }
 
-trainRMSE
-testRMSE
+result = (trainRMSE + testRMSE)
+#mangler det sidste
 
 
 #- Report the results and comment on them. 
@@ -238,6 +242,8 @@ testRMSE
 
 # Bonus Question 1: What is the effect of changing the number of folds? Can you plot RMSE as a function of number of folds?
 # Bonus Question 2: compare the cross-validated predictive error against the actual predictive error on the test data
+
+class(train_df$Child.ID)
 ```
 
 [HERE GOES YOUR ANSWER]
