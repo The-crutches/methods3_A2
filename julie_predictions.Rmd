@@ -254,8 +254,14 @@ cv_test
 
 # Bonus Question 1: What is the effect of changing the number of folds? Can you plot RMSE as a function of number of folds?
 # Bonus Question 2: compare the cross-validated predictive error against the actual predictive error on the test data
+RMSE(prediction, test$CHI_MLU)/mean(test$CHI_MLU)
 
-class(train_df$Child.ID)
+predictions <- model %>% predict(test.data)
+data.frame( R2 = R2(predictions, test.data$Fertility),
+            RMSE = RMSE(predictions, test.data$Fertility),
+            MAE = MAE(predictions, test.data$Fertility))
+
+
 ```
 
 [HERE GOES YOUR ANSWER]
@@ -273,6 +279,29 @@ You want to evaluate:
 - how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child)
 
 ```{r}
+
+
+average_TD <- subset(df_test, Diagnosis == "TD")
+
+average_TD$meanPredict <- subset()
+
+#We filter out Bernie who will be participant nr. 4 in this case
+
+bernie <- subset(df_test, Child.ID == 4 )
+
+
+
+# Visit 6
+bernie_visit <- subset(bernie, Visit == 6)
+
+visit_6 <- predict(max, newdata = bernie_visit, allow.new.levels = TRUE)
+bernie_visit <- data.frame(bernie_visit, visit_6)
+
+#Now we make a colomn which shows the difference between predicted and actual MLU for Bernie
+bernie_visit$compared <- bernie_visit$visit_6 - bernie_visit$CHI_MLU
+bernie_visit$compared
+
+# At visit 6, the model predicted that he would have a MLU of 3.4. His actual MLU was 2.8 so the model is 0.6 off and he is below expectation. 
 
 ```
 
