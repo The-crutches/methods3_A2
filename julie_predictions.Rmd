@@ -306,6 +306,49 @@ bernie_visit$compared
 ```
 
 
+```{r}
+#Finding BERNIE
+Bernie <- subset(df_test, Child.ID == 4)
+
+#Subsetting for TD
+test_TD <- subset(df_test, Diagnosis == "TD")
+
+#average for TD child at each visit
+
+pacman::p_load(data.table)
+
+meanMLUTD <- aggregate(test_TD[, 12], list(test_TD$Visit), mean)
+
+meanMLUTD <- rename(meanMLUTD, "Visit" = "Group.1")
+meanMLUTD <- rename(meanMLUTD, "mean_MLU_TD" = "CHI_MLU")
+
+#Inserting the mean in Bernies dataset
+Bernie <- merge(Bernie, meanMLUTD, by = "Visit")
+
+#Calculating the absolute difference
+Bernie$AD_TD <- (Bernie$CHI_MLU - Bernie$mean_MLU_TD )
+
+#PLotting something 
+
+
+
+#Subsetting for ASD
+test_ASD <- subset(df_test, Diagnosis == "ASD")
+
+#average for TD child at each visit
+
+meanMLUASD <- aggregate(test_ASD[, 12], list(test_ASD$Visit), mean)
+
+meanMLUASD <- rename(meanMLUASD, c("Visit" = "Group.1", "mean_MLU_ASD" = "x"))
+
+#Inserting the mean in Bernies dataset
+Bernie <- merge(Bernie, meanMLUASD, by = "Visit")
+
+#Calculating the absolute difference
+Bernie$AD_ASD <- (Bernie$CHI_MLU - Bernie$mean_MLU_ASD )
+
+```
+
 [HERE GOES YOUR ANSWER]
 
 ### OPTIONAL: Exercise 4) Model Selection via Information Criteria
