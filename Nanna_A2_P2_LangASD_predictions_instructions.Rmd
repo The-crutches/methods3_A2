@@ -268,9 +268,6 @@ Bernie <- merge(Bernie, meanMLUTD, by = "Visit")
 #Calculating the absolute difference
 Bernie$AD_TD <- (Bernie$CHI_MLU - Bernie$mean_MLU_TD )
 
-#PLotting something 
-
-
 
 #Subsetting for ASD
 test_ASD <- subset(df_test, Diagnosis == "ASD")
@@ -286,6 +283,15 @@ Bernie <- merge(Bernie, meanMLUASD, by = "Visit")
 
 #Calculating the absolute difference
 Bernie$AD_ASD <- (Bernie$CHI_MLU - Bernie$mean_MLU_ASD )
+
+#Plotting Bernie against means for TD and ASD
+ggplot(Bernie) +
+  geom_point(aes(y=mean_MLU_TD , x=Visit, color = "red" , )) +
+  geom_point(aes(y=mean_MLU_ASD , x=Visit, color = "blue")) + 
+  geom_point(aes(y=CHI_MLU, x=Visit, color = "green")) +
+  scale_color_discrete(name="MLU",
+                         breaks=c("red", "green", "blue"),
+                         labels=c("mean TD", "Bernie", "mean ASD"))
 
 ```
 
