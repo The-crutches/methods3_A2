@@ -268,6 +268,9 @@ Bernie <- merge(Bernie, meanMLUTD, by = "Visit")
 #Calculating the absolute difference
 Bernie$AD_TD <- (Bernie$CHI_MLU - Bernie$mean_MLU_TD )
 
+#PLotting something 
+
+
 
 #Subsetting for ASD
 test_ASD <- subset(df_test, Diagnosis == "ASD")
