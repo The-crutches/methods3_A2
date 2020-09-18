@@ -122,10 +122,14 @@ train_mot <- lmerTest::lmer(MOT_MLU ~ Visit+Diagnosis+
 #- calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
 
 data_clean <- data_clean[!is.na(data_clean$CHI_MLU), 1:20] 
+data_clean <- data_clean[!is.na(data_clean$Socialization), 1:20] 
 df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
 
-rmse(data_clean$CHI_MLU, fitted(train_chi))
-rmse(df$CHI_MLU, fitted(bmaxv))
+rmse(data_clean$CHI_MLU, fitted(train_chi)) #0.32
+rmse(train$CHI_MLU, fitted(bmaxv))
+rmse(data_clean$CHI_MLU, fitted(bmaxv)) #0.45
+mean(data_clean$CHI_MLU) #1.99
+
 
 ##What is a good rmse-value?
 
@@ -137,6 +141,9 @@ LU <- read_csv("LU_test.csv")
 token <- read_csv("token_test.csv")
 
 df_test <- CleanUpData(Demo, LU, token)
+df_test <- df_test[!is.na(df_test$Socialization), 1:20]
+train <- train[!is.na(train$CHI_MLU), 1:20]
+
 
 
 #- test the performance of the models on the test data (Tips: google the functions "predict()")
@@ -146,15 +153,23 @@ predict_chi <- predict(train_chi, newdata = df_test, allow.new.levels = TRUE)
 
 predict_chi
 
-#the fit of the predicted 
-rmse(df_test$CHI_MLU, predict_chi)
+predict_bmax <- predict(bmaxv, newdata = df_test, allow.new.levels = TRUE)
 
-mean(df_test$CHI_MLU)
+#the fit of the predicted 
+rmse(df_test$CHI_MLU, predict_chi) #1.47
+rmse(df_test$CHI_MLU, predict_bmax) #0.57
+
+mean(df_test$CHI_MLU) #2.1
 #This doesn't seem like a good performance at all! :(
 
 #Plot the predicted with the actual data
+ggplot(df_test, aes(x = CHI_MLU, y = predict_chi)) + 
+  geom_point() + 
+  geom_smooth() +
+xlab('MLU') + ylab('Predicted') + ggtitle('Actual data vs. model prediction values')
 
 
+###ØHHH sarah jeg tror ikke at det er helt rigtigt
 
 #- optional: predictions are never certain, can you identify the uncertainty of the predictions? (e.g. google predictinterval())
 
@@ -182,13 +197,35 @@ In this exercise you have to use cross-validation to calculate the predictive er
 ```{r}
 #- Create the basic model of ChildMLU as a function of Time and Diagnosis (don't forget the random effects!).
 
-
+m1 <- lmer(CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + (1+I(Visit^2)|Child.ID), data_clean, REML = FALSE)
 
 #- Make a cross-validated version of the model. (Tips: google the function "createFolds";  loop through each fold, train a model on the other folds and test it on the fold)
 
+k = 6
+folds = createFolds(unique(data_clean$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+trainRMSE= rep(NA, k)
+testRMSE = rep(NA, k)
+i = 1
+for (fold in folds){
+  train = subset(data_clean, !(Child.ID %in% fold))
+  test = subset(data_clean, Child.ID %in% fold)
+  model = bmaxv
+  test$prediction = predict(model, test, allow.new.levels = TRUE)
+  train$prediction = fitted(model)
+  trainRMSE[i] = RMSE(train$CHI_MLU, fitted(model))
+  testRMSE[i] = RMSE(data_clean$CHI_MLU, test$prediction)
+  i = i + 1
+}
+trainRMSE
+testRMSE
+
 #- Report the results and comment on them. 
+##The testRMSE has a bigger average error for predictions in each folds than the trainRSME
 
 #- Now try to find the best possible predictive model of ChildMLU, that is, the one that produces the best cross-validated results.
+
+
+
 
 # Bonus Question 1: What is the effect of changing the number of folds? Can you plot RMSE as a function of number of folds?
 # Bonus Question 2: compare the cross-validated predictive error against the actual predictive error on the test data
@@ -209,6 +246,54 @@ You want to evaluate:
 - how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child)
 
 ```{r}
+
+test_TD <- subset(df_test, Diagnosis == "TD")
+
+test_TD <- group_by(test_TD, Visit)
+
+test_TD$meanPredict <- mean(test_TD$pred_max)
+
+summary(test_TD$pred_max, filter(test_TD$Visit == 1))
+summary(test_TD$CHI_MLU , filter(test_TD, Visit == 1))
+
+#Bernie
+Bernie <- subset(df_test, Child.ID == 4)
+
+#Deviding per visit
+test_TD1 <- filter(test_TD, Visit == 1)
+test_TD2 <- filter(test_TD, Visit == 2)
+test_TD3 <- filter(test_TD, Visit == 3)
+test_TD4 <- filter(test_TD, Visit == 4)
+test_TD5 <- filter(test_TD, Visit == 5)
+test_TD6 <- filter(test_TD, Visit == 6)
+
+#Creating mean collumn
+
+test_TD1$mean1MLU <- mean(test_TD1$CHI_MLU)
+test_TD2$mean2MLU <- mean(test_TD2$CHI_MLU)
+test_TD3$mean3MLU <- mean(test_TD3$CHI_MLU)
+test_TD4$mean4MLU <- mean(test_TD4$CHI_MLU)
+test_TD5$mean5MLU <- mean(test_TD5$CHI_MLU)
+test_TD6$mean6MLU <- mean(test_TD6$CHI_MLU)
+
+#Comparing BERNIE
+
+test_TD1$Bernie <- Bernie$CHI_MLU[1]- test_TD1$mean1MLU
+test_TD2$Bernie <- Bernie$CHI_MLU[2]- test_TD2$mean2MLU
+test_TD3$Bernie <- Bernie$CHI_MLU[3]- test_TD3$mean3MLU
+test_TD4$Bernie <- Bernie$CHI_MLU[4]- test_TD4$mean4MLU
+test_TD5$Bernie <- Bernie$CHI_MLU[5]- test_TD5$mean5MLU
+test_TD6$Bernie <- Bernie$CHI_MLU[6]- test_TD6$mean6MLU
+
+
+
+pred_max <- predict(bmaxv, newdata = df_test, allow.new.levels = TRUE)
+
+df_test <- data.frame(df_test , pred_max)
+
+df_test$compared <- (df_test$pred_max - df_test$CHI_MLU) 
+
+ggplot(df_test, aes( x = pred_max , y = CHI_MLU )) + geom_point() + facet_wrap(~Child.ID)
 
 ```
 
