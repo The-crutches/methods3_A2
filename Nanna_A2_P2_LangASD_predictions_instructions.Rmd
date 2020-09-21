@@ -243,12 +243,16 @@ You want to evaluate:
 
 - how does the child fare in ChildMLU compared to the average TD child at each visit? Define the distance in terms of absolute difference between this Child and the average TD.
 
-- how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child)
+- how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child) #See below
+
+#Everything in this exercise is run on our max model. I am not sure why 
 
 #A better solution 
 ```{r}
 #Finding BERNIE
 Bernie <- subset(df_test, Child.ID == 4)
+mean(Bernie$CHI_MLU)
+Bernie$CHI_MLU
 
 #Subsetting for TD
 test_TD <- subset(df_test, Diagnosis == "TD")
@@ -268,9 +272,7 @@ Bernie <- merge(Bernie, meanMLUTD, by = "Visit")
 #Calculating the absolute difference
 Bernie$AD_TD <- (Bernie$CHI_MLU - Bernie$mean_MLU_TD )
 
-#PLotting something 
-
-
+mean(Bernie$AD_TD)
 
 #Subsetting for ASD
 test_ASD <- subset(df_test, Diagnosis == "ASD")
@@ -287,11 +289,26 @@ Bernie <- merge(Bernie, meanMLUASD, by = "Visit")
 #Calculating the absolute difference
 Bernie$AD_ASD <- (Bernie$CHI_MLU - Bernie$mean_MLU_ASD )
 
+mean(Bernie$AD_ASD)
+
+#Plotting Bernie against means for TD and ASD (geom_smooth er ikke nødvendigvis det pæneste men synes det giver mening at se at Bernie er nogenlunde paralel med TD i udvikling. Måske fjerne SE)
+ggplot(Bernie) +
+  geom_point(aes(y=mean_MLU_TD , x=Visit, color = "red" , )) +
+  geom_smooth(aes(y=mean_MLU_TD, x=Visit, color = "red"), method = lm , alpha = 0) +
+  geom_point(aes(y=mean_MLU_ASD , x=Visit, color = "blue")) + 
+  geom_smooth(aes(y=mean_MLU_ASD, x=Visit, color = "blue"), method = lm, alpha = 0) +
+  geom_point(aes(y=CHI_MLU, x=Visit, color = "green")) +
+  geom_smooth(aes(y=CHI_MLU, x=Visit, color = "green"), method = lm, alpha = 0) +
+  scale_color_discrete(name="Diagnosis",
+                         breaks=c("red", "green", "blue"),
+                         labels=c("mean TD", "Bernie", "mean ASD")) +
+  ylab("MLU")
+
 ```
 
 
 
-#NEdenstående er lavet af Julie og NAnananan
+#NEdenstående er lavet af Julie og NAnananan og er IKKE optimalt
 ```{r}
 
 test_TD <- subset(df_test, Diagnosis == "TD")
@@ -333,16 +350,30 @@ test_TD5$Bernie <- Bernie$CHI_MLU[5]- test_TD5$mean5MLU
 test_TD6$Bernie <- Bernie$CHI_MLU[6]- test_TD6$mean6MLU
 
 
-#Noget andet
-pred_max <- predict(bmaxv, newdata = df_test, allow.new.levels = TRUE)
 
-df_test <- data.frame(df_test , pred_max)
-
-df_test$compared <- (df_test$pred_max - df_test$CHI_MLU) 
-
-ggplot(df_test, aes( x = pred_max , y = CHI_MLU )) + geom_point() + facet_wrap(~Child.ID)
 
 ```
+
+- how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child)
+
+```{r}
+
+
+Bernie$predict_max <- predict(bmaxv, newdata = Bernie, allow.new.levels = TRUE)
+
+
+Bernie$dif_max <- (Bernie$predict_max - Bernie$CHI_MLU) 
+
+Bernie$dif_max 
+
+rmse(Bernie$CHI_MLU, predict_bmax) #0.85
+
+ggplot(Bernie)+
+  geom_point(aes(x=predict_max , y = CHI_MLU)) +
+  geom_smooth(aes(x=predict_max , y = CHI_MLU),method = lm)
+
+```
+
 
 
 [HERE GOES YOUR ANSWER]
