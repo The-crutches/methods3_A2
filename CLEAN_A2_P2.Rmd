@@ -7,8 +7,6 @@ output: html_document
 #Loading packages
 ```{r}
 pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret, data.table)
-
-
 ```
 
 
@@ -20,7 +18,7 @@ pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret, data.table)
 ```{r}
 
 # Load training Data
-train_df <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/data_clean.csv")
+train_df <- read_csv("data_clean.csv")
 train_df <- train_df[!is.na(train_df$Socialization), 1:20] 
 train_df <- train_df[!is.na(train_df$CHI_MLU), 1:20] 
 
@@ -82,21 +80,20 @@ CleanUpData <- function(Demo,LU,Word){
 
 #- create the test dataset (apply the code from assignment 1 or my function to clean up the 3 test datasets)
 # Test data
-Demo <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/demo_test.csv")
-LU <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/LU_test.csv")
-token <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/token_test.csv")
+Demo <- read_csv("demo_test.csv")
+LU <- read_csv("LU_test.csv")
+token <- read_csv("token_test.csv")
 
 df_test <- CleanUpData(Demo, LU, token)
+df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20]
+
 ```
 
 - calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
 
 ```{r}
-
-
 rmse(train_df$CHI_MLU, fitted(max))
 #0.45
-
 
 mean(train_df$CHI_MLU)
 #1.99
@@ -105,18 +102,12 @@ The rmse is quite big compared to the mean, which could indicate that our model 
 
 - test the performance of the model on the test data 
 ```{r}
-
-df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
 #This shows the predicted MLU
 predict_chi <- predict(max, newdata = df_test, allow.new.levels = TRUE)
-
 predict_chi
-
-
 
 #the fit of the predicted 
 rmse(df_test$CHI_MLU, predict_chi)
-
 
 mean(df_test$CHI_MLU)
 #This doesn't seem like a good performance at all! :(
@@ -139,8 +130,6 @@ trainRMSE_our= rep(NA, k)
 trainRMSE_simple= rep(NA,k)
 testRMSE_our = rep(NA, k)
 testRMSE_simple = rep(NA, k)
-
-
 
 #Looping through each loop 
 i = 1
@@ -179,11 +168,20 @@ our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, diff_our, trainRMSE_sim
   #Fold column
 our_vs_simple$folds <- c(1:6)
 
-#Plotting our moden against the simple model
-ggplot(our_vs_simple)+
-  geom_point(aes(x=folds, y = diff_simple, fill = "blue"))+
-  geom_point(aes(x=folds, y= diff_our, color = "red"))
-  
+#Plotting our model against the simple model
+our_vs_simple$folds <- as.factor(our_vs_simple$folds)
+our_vs_simple <- select(our_vs_simple, diff_simple, diff_our, folds) #selecting relevant data
+diff_df <- gather(our_vs_simple, difference, value, diff_our, diff_simple, factor_key = T) #changing data format to long
+
+#plotting
+diff_df$difference <- as.factor(diff_df$difference)
+ggplot(diff_df, aes(x = folds, y = value)) + 
+  geom_point(aes(color = difference)) +
+  ylab('Difference in RMSE values') + 
+  xlab('Fold number')
+# clearly 'our' model has the shortest distance to zero, and therefore it is better than the simple model. 
+
+
 
 #Mean (we want closest to 0)
   #our model on the training data is closest to the test data (report mean and SD)
@@ -321,7 +319,6 @@ Bernie$predict_max <- predict(max, newdata = Bernie, allow.new.levels = TRUE)
 
 # Calculating the difference between predicted and and actual values
 Bernie$dif_max <- (Bernie$predict_max - Bernie$CHI_MLU) 
-
 Bernie$dif_max 
 
 
@@ -331,7 +328,6 @@ ggplot(Bernie)+
   geom_point(aes(y = CHI_MLU, x = Visit, color = "blue")) +
   scale_color_discrete(name=" ",
                          breaks=c("red", "blue"),
-                         labels=c("Predicted", "Bernie MLU")) +
-  ylab("MLU")
+                         labels=c("Predicted", "Bernie MLU")) + ylab("MLU")
 ```
 
