@@ -176,6 +176,11 @@ xlab('MLU') + ylab('Predicted') + ggtitle('Actual data vs. model prediction valu
 
 ```
 
+Vi prøver lige noget
+```{r}
+
+```
+
 [HERE GOES YOUR ANSWER]
 
 ### Exercise 2) Model Selection via Cross-validation (N.B: ChildMLU!)
@@ -192,6 +197,63 @@ In this exercise you have to use cross-validation to calculate the predictive er
 
 - Bonus Question 1: What is the effect of changing the number of folds? Can you plot RMSE as a function of number of folds?
 - Bonus Question 2: compare the cross-validated predictive error against the actual predictive error on the test data
+
+```{r}
+#pacman::p_load(cvms, groupdata2, knitr)
+
+# Set seed for reproducibility
+set.seed(7)
+
+data_clean$Child.ID <- as.factor(data_clean$Child.ID)
+
+# Fold data 
+dataCV <- fold(
+  data = data_clean, k = 6,
+  cat_col = 'Diagnosis',
+  id_col = 'Child.ID') %>% 
+  arrange(.folds)
+
+# Show first 15 rows of data
+dataCV %>% head(15) %>% kable()
+
+#Model failed to converge with growth, but works with bmaxv
+CV1 <- cross_validate(
+  data = dataCV,
+  formulas = "CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID)",
+  fold_cols = '.folds',
+  family = 'gaussian',
+  REML = FALSE
+)
+
+CV1
+
+#see the model
+CV1 %>% select_definitions() %>% kable()
+
+# Nested predictions 
+# Note that [[1]] picks predictions for the first row
+CV1$Predictions[[1]] %>% head() %>% kable()
+
+
+# Nested results from the different folds
+CV1$Results[[1]] %>% kable()
+
+# Nested model coefficients
+# Note that you have the full p-values, 
+# but kable() only shows a certain number of digits
+CV1$Coefficients[[1]] %>% kable()
+
+##Hmmmm jeg ikke sikker på hvad der sker her?!?
+
+# Additional information about the model
+# and the training process
+CV1 %>% select(14:21) %>% kable()
+
+
+
+```
+
+
 
 
 ```{r}
@@ -369,8 +431,17 @@ Bernie$dif_max
 rmse(Bernie$CHI_MLU, predict_bmax) #0.85
 
 ggplot(Bernie)+
-  geom_point(aes(x=predict_max , y = CHI_MLU)) +
-  geom_smooth(aes(x=predict_max , y = CHI_MLU),method = lm)
+  geom_point(aes(y = predict_max , x = Visit, color = "red")) +
+  geom_point(aes(y = CHI_MLU, x = Visit, color = "blue")) +
+  scale_color_discrete(name=" ",
+                         breaks=c("red", "blue"),
+                         labels=c("Predicted", "Bernie MLU")) +
+  ylab("MLU")
+
+
+#+
+  #geom_smooth(aes(y = predict_max , x = Visit), method = lm) +
+  #geom_smooth(aes(y = CHI_MLU, x = Visit, method = lm))
 
 ```
 

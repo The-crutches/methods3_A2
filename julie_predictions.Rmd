@@ -251,15 +251,16 @@ max <-  lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + ver
 cv_test <- cross_valid(train_df, 6, max)
 cv_test
 
+growth <- lmer(CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + (1+I(Visit^2)|Child.ID), train_df, REML = FALSE)
+cv_test2 <- cross_valid(train_df, 6, growth)
+
+m1 <- CHI_MLU ~ Visit*Diagnosis+Gender+
+                       (1+Visit|Child.ID)
+
+cv_test3 <- cross_valid(train_df, 6, m1)
 
 # Bonus Question 1: What is the effect of changing the number of folds? Can you plot RMSE as a function of number of folds?
 # Bonus Question 2: compare the cross-validated predictive error against the actual predictive error on the test data
-RMSE(prediction, test$CHI_MLU)/mean(test$CHI_MLU)
-
-predictions <- model %>% predict(test.data)
-data.frame( R2 = R2(predictions, test.data$Fertility),
-            RMSE = RMSE(predictions, test.data$Fertility),
-            MAE = MAE(predictions, test.data$Fertility))
 
 
 ```
