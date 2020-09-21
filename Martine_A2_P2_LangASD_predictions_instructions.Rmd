@@ -229,14 +229,33 @@ for (fold in folds){
   i = i + 1
 }
 
-#Making dataframe with RMSE values 
-our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, trainRMSE_simple, testRMSE_simple)
+#Making dataframe with RMSE values
+  #Making difference columns for our model
+diff_our <- trainRMSE_our - testRMSE_our
+  #Making difference columns for simple model
+diff_simple <- trainRMSE_simple - testRMSE_simple
+  
+#Dataframe
+our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, diff_our, trainRMSE_simple, testRMSE_simple, diff_simple)
+  #Fold column
+our_vs_simple$folds <- c(1:6)
+
+#Running t-test testing for significant difference between the to differences 
+ggplot(our_vs_simple)+
+  geom_point(aes(x=folds, y = diff_simple ))+
+  geom_smooth(aes(x=folds, y = diff_simple),method = "lm", alpha = 0)+
+  geom_point(aes(x=folds, y= diff_our))+
+  geom_smooth(aes(x=folds, y = diff_our),method = "lm", alpha= 0)
+    
+  
+t.test(diff_our ~ diff_simple, our_vs_simple)
+?t.test
 ```
 
 
 ```{r}
 # Cross validation function
-cross_valid <- function(data, k, model){
+cross_valid <- function(data, k, m){
   folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
 
 trainRMSE = rep(NA, k)
@@ -246,10 +265,10 @@ i = 1
 for (fold in folds){
   train = subset(train_data, !(Child.ID %in% fold))
   test = subset(train_data, Child.ID %in% fold)
-  model = lmer(model, train, REML = FALSE)
-  test$prediction = predict(model, test, allow.new.levels = TRUE)
-  train$prediction = fitted(model)
-  trainRMSE[i] = RMSE(train$CHI_MLU, fitted(model))
+  m = lmer(m, train, REML = FALSE)
+  test$prediction = predict(m, test, allow.new.levels = TRUE)
+  train$prediction = fitted(m)
+  trainRMSE[i] = RMSE(train$CHI_MLU, fitted(m))
   testRMSE[i] = RMSE(test$CHI_MLU, test$prediction)
   i = i + 1
 }
