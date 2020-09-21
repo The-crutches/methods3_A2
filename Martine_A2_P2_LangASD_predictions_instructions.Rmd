@@ -186,34 +186,55 @@ RMSE_m1 <- data.frame(trainRMSE_m1, testRMSE_m1)
 #- Report the results and comment on them. 
 
 #- Now try to find the best possible predictive model of ChildMLU, that is, the one that produces the best cross-validated results.
-    #This code compares several models in the same fold. Maybe you could make a function that makes it a little more interpretable 
+    #This code compares several models in the same fold. Maybe you could make a function that makes it a little more interpretable
+```
+
+
+```{r}
+#Comparing basic model with our model 
+
+#Creating folds 
 k = 6
 folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
 
-trainRMSE_m1= rep(NA, k)
-trainRMSE_m2 = rep(NA,k)
-testRMSE_m1 = rep(NA, k)
-testRMSE_m2 = rep(NA, k)
+#Creating empty lists for RMSE values
+trainRMSE_our= rep(NA, k)
+trainRMSE_simple= rep(NA,k)
+testRMSE_our = rep(NA, k)
+testRMSE_simple = rep(NA, k)
 
+#Looping through each loop 
 i = 1
 for (fold in folds){
-  train_m1 = subset(train_data, !(Child.ID %in% fold))
-  test_m1 = subset(train_data, Child.ID %in% fold)
-  model_m1 = lmer(CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + (1+I(Visit^2)|Child.ID), train_m1, REML = FALSE)
-  model_m2 = lmer(CHI_MLU ~Visit*Diagnosis + (1+Visit|Child.ID), train_m1, REML = FALSE)
-  test_m1$prediction = predict(model_m1, test_m1, allow.new.levels = TRUE)
-  train_m1$prediction = fitted(model_m1)
-  test_m1$prediction_m2 = predict(model_m2, test_m1, allow.new.levels = TRUE)
-  train_m1$prediction_m2 = fitted(model_m2)
-  trainRMSE_m1[i] = RMSE(train_m1$CHI_MLU, fitted(model_m1))
-  testRMSE_m1[i] = RMSE(test_m1$CHI_MLU, test_m1$prediction)
-  trainRMSE_m2[i] = RMSE(train_m1$CHI_MLU, fitted(model_m2))
-  testRMSE_m2[i] = RMSE(test_m1$CHI_MLU, test_m1$prediction_m2)
+  #Creating training data set and test data set 
+  train_os = subset(train_data, !(Child.ID %in% fold))
+  test_os = subset(train_data, Child.ID %in% fold)
+  #Making models
+  our_model = lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_os, REML = F)
+  simple_model = lmer(CHI_MLU ~Visit*Diagnosis + (1+Visit|Child.ID), train_os, REML = FALSE)
+  #Making prediction columns predicting the model
+    #For our model
+  test_os$prediction = predict(our_model, test_os, allow.new.levels = TRUE)
+  train_os$prediction = fitted(our_model)
+    #For simple model
+  test_os$prediction2 = predict(simple_model, test_os, allow.new.levels = TRUE)
+  train_os$prediction2 = fitted(simple_model)
+  #Calculating RMSE values 
+    #For our model
+  trainRMSE_our[i] = RMSE(train_os$CHI_MLU, fitted(our_model))
+  testRMSE_our[i] = RMSE(test_os$CHI_MLU, test_os$prediction)
+    #For simple model 
+  trainRMSE_simple[i] = RMSE(train_os$CHI_MLU, fitted(simple_model))
+  testRMSE_simple[i] = RMSE(test_os$CHI_MLU, test_os$prediction2)
   i = i + 1
 }
 
-RMSE_m1 <- data.frame(trainRMSE_m1, testRMSE_m1, trainRMSE_m2, testRMSE_m2)
+#Making dataframe with RMSE values 
+our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, trainRMSE_simple, testRMSE_simple)
+```
 
+
+```{r}
 # Cross validation function
 cross_valid <- function(data, k, model){
   folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
