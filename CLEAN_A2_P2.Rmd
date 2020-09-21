@@ -159,19 +159,19 @@ for (fold in folds){
 
 #Making dataframe with RMSE values
   #Making difference columns for our model
-diff_our <- trainRMSE_our - testRMSE_our
+diff_complex <- trainRMSE_our - testRMSE_our
   #Making difference columns for simple model
 diff_simple <- trainRMSE_simple - testRMSE_simple
   
 #Dataframe
-our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, diff_our, trainRMSE_simple, testRMSE_simple, diff_simple)
+our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, diff_complex, trainRMSE_simple, testRMSE_simple, diff_simple)
   #Fold column
 our_vs_simple$folds <- c(1:6)
 
 #Plotting our model against the simple model
 our_vs_simple$folds <- as.factor(our_vs_simple$folds)
-our_vs_simple <- select(our_vs_simple, diff_simple, diff_our, folds) #selecting relevant data
-diff_df <- gather(our_vs_simple, difference, value, diff_our, diff_simple, factor_key = T) #changing data format to long
+our_vs_simple <- select(our_vs_simple, diff_simple, diff_complex, folds) #selecting relevant data
+diff_df <- gather(our_vs_simple, difference, value, diff_complex, diff_simple, factor_key = T) #changing data format to long
 
 #plotting
 diff_df$difference <- as.factor(diff_df$difference)
@@ -179,8 +179,8 @@ ggplot(diff_df, aes(x = folds, y = value)) +
   geom_point(aes(color = difference)) +
   ylab('Difference in RMSE values') + 
   xlab('Fold number')
-# clearly 'our' model has the shortest distance to zero, and therefore it is better than the simple model. 
 
+  # clearly 'our' model has the shortest distance to zero, and therefore it is better than the simple model. 
 
 
 #Mean (we want closest to 0)
