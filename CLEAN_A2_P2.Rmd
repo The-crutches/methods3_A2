@@ -4,9 +4,9 @@ author: "Study group 4"
 date: "21/9/2020"
 output: html_document
 ---
-#Loading data and packages
+#Loading packages
 ```{r}
-pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret)
+pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret, data.table)
 
 
 ```
@@ -21,8 +21,11 @@ pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret)
 
 # Load training Data
 train_df <- read_csv("~/Uni stuff/Expmeth3/methods3_A2_p2/data_clean.csv")
+train_df <- train_df[!is.na(train_df$Socialization), 1:20] 
+train_df <- train_df[!is.na(train_df$CHI_MLU), 1:20] 
 
-max <-  lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_df, REML = F)
+# Model from last time 
+max <-lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_df, REML = F)
 
 ```
 
@@ -89,7 +92,7 @@ df_test <- CleanUpData(Demo, LU, token)
 - calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
 
 ```{r}
-train_df <- train_df[!is.na(train_df$CHI_MLU), 1:20] 
+
 
 rmse(train_df$CHI_MLU, fitted(max))
 #0.45
@@ -98,17 +101,18 @@ rmse(train_df$CHI_MLU, fitted(max))
 mean(train_df$CHI_MLU)
 #1.99
 ```
+The rmse is quite big compared to the mean, which could indicate that our model is not good enough to predict the values. 
 
-
-- test the performance of the models on the test data 
+- test the performance of the model on the test data 
 ```{r}
 
+df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
 #This shows the predicted MLU
 predict_chi <- predict(max, newdata = df_test, allow.new.levels = TRUE)
 
 predict_chi
 
-df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20] 
+
 
 #the fit of the predicted 
 rmse(df_test$CHI_MLU, predict_chi)
@@ -128,7 +132,7 @@ mean(df_test$CHI_MLU)
 
 #Creating folds 
 k = 6
-folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+folds = createFolds(unique(train_df$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
 
 #Creating empty lists for RMSE values
 trainRMSE_our= rep(NA, k)
@@ -136,12 +140,14 @@ trainRMSE_simple= rep(NA,k)
 testRMSE_our = rep(NA, k)
 testRMSE_simple = rep(NA, k)
 
+
+
 #Looping through each loop 
 i = 1
 for (fold in folds){
   #Creating training data set and test data set 
-  train_os = subset(train_data, !(Child.ID %in% fold))
-  test_os = subset(train_data, Child.ID %in% fold)
+  train_os = subset(train_df, !(Child.ID %in% fold))
+  test_os = subset(train_df, Child.ID %in% fold)
   #Making models
   our_model = lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_os, REML = F)
   simple_model = lmer(CHI_MLU ~Visit*Diagnosis + (1+Visit|Child.ID), train_os, REML = FALSE)
@@ -173,7 +179,7 @@ our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, diff_our, trainRMSE_sim
   #Fold column
 our_vs_simple$folds <- c(1:6)
 
-#Running t-test testing for significant difference between the to differences 
+#Plotting our moden against the simple model
 ggplot(our_vs_simple)+
   geom_point(aes(x=folds, y = diff_simple, fill = "blue"))+
   geom_point(aes(x=folds, y= diff_our, color = "red"))
@@ -196,7 +202,7 @@ sd(our_vs_simple$diff_simple)
     #Making function that allows us to just put a test in 
 cross_valid <- function(data, k, m){
   #Creating folds
-  folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+  folds = createFolds(unique(train_df$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
 #Creating empty lists
 trainRMSE = rep(NA, k)
 testRMSE = rep(NA, k)
@@ -205,8 +211,8 @@ testRMSE = rep(NA, k)
 i = 1
 for (fold in folds){
   #Datasets
-  train = subset(train_data, !(Child.ID %in% fold))
-  test = subset(train_data, Child.ID %in% fold)
+  train = subset(train_df, !(Child.ID %in% fold))
+  test = subset(train_df, Child.ID %in% fold)
   #Model
   m = lmer(m, train, REML = FALSE)
   #Prediction columns
@@ -224,15 +230,15 @@ result = data.frame(trainRMSE, testRMSE)
 
 #testing it
 growth <-  CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + (1+I(Visit^2)|Child.ID)
-test_1 <- cross_valid(train_data, 6, growth)
+test_1 <- cross_valid(train_df, 6, growth)
 test_1$diff1 <- test_1$trainRMSE - test_1$testRMSE
 
 basic <-  CHI_MLU ~ Visit*Diagnosis + (1+Visit|Child.ID)
-test_2 <- cross_valid(train_data, 6, basic)
+test_2 <- cross_valid(train_df, 6, basic)
 test_2$diff2 <- test_2$trainRMSE - test_2$testRMSE
 
 bmaxv <-  lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_os, REML = F)
-test_3 <- cross_valid(train_data, 6, bmaxv)
+test_3 <- cross_valid(train_df, 6, bmaxv)
 test_3$diff3 <- test_3$trainRMSE - test_3$testRMSE
 
 #Mean and sd on the test results 
@@ -261,12 +267,10 @@ test_TD <- subset(df_test, Diagnosis == "TD")
 
 #average for TD child at each visit
 
-pacman::p_load(data.table)
-
 meanMLUTD <- aggregate(test_TD[, 12], list(test_TD$Visit), mean)
 
 meanMLUTD <- rename(meanMLUTD, "Visit" = "Group.1")
-meanMLUTD <- rename(meanMLUTD, "mean_MLU_TD" = "CHI_MLU")
+meanMLUTD <- rename(meanMLUTD, "mean_MLU_TD" = "x")
 
 #Inserting the mean in Bernies dataset
 Bernie <- merge(Bernie, meanMLUTD, by = "Visit")
@@ -312,15 +316,16 @@ ggplot(Bernie) +
 - how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child) #See below
 ```{r}
 
-Bernie$predict_max <- predict(bmaxv, newdata = Bernie, allow.new.levels = TRUE)
+# predicted values for each visit
+Bernie$predict_max <- predict(max, newdata = Bernie, allow.new.levels = TRUE)
 
-
+# Calculating the difference between predicted and and actual values
 Bernie$dif_max <- (Bernie$predict_max - Bernie$CHI_MLU) 
 
 Bernie$dif_max 
 
-rmse(Bernie$CHI_MLU, predict_bmax) #0.85
 
+# Plotting the values
 ggplot(Bernie)+
   geom_point(aes(y = predict_max , x = Visit, color = "red")) +
   geom_point(aes(y = CHI_MLU, x = Visit, color = "blue")) +
