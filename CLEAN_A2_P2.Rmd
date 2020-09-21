@@ -1,0 +1,133 @@
+---
+title: "CLEAN_A2_P2"
+author: "Study group 4"
+date: "21/9/2020"
+output: html_document
+---
+#Loading data and packages
+```{r}
+pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret)
+
+
+```
+
+
+
+### Exercise 1) Testing model performance
+
+- recreate the models you chose last time (just write the model code again and apply it to your training data (from the first assignment))
+
+```{r}
+
+```
+
+- create the test dataset (apply the code from assignment 1 to clean up the 3 test datasets)
+
+```{r}
+
+```
+
+- test the performance of the models on the test data 
+```{r}
+
+```
+
+### Exercise 2) Model Selection via Cross-validation (N.B: ChildMLU!)
+
+- Use cross-validation to compare your model from last week with the basic model (Child MLU as a function of Time and Diagnosis, and don't forget the random effects!)
+
+```{r}
+
+```
+
+- Now try to find the best possible predictive model of ChildMLU, that is, the one that produces the best cross-validated results.
+
+```{r}
+
+```
+
+
+### Exercise 3) Assessing the single child
+
+- how does the child fare in ChildMLU compared to the average TD child at each visit? Define the distance in terms of absolute difference between this Child and the average TD.
+
+```{r}
+#Finding BERNIE
+Bernie <- subset(df_test, Child.ID == 4)
+mean(Bernie$CHI_MLU)
+Bernie$CHI_MLU
+
+#Subsetting for TD
+test_TD <- subset(df_test, Diagnosis == "TD")
+
+#average for TD child at each visit
+
+pacman::p_load(data.table)
+
+meanMLUTD <- aggregate(test_TD[, 12], list(test_TD$Visit), mean)
+
+meanMLUTD <- rename(meanMLUTD, "Visit" = "Group.1")
+meanMLUTD <- rename(meanMLUTD, "mean_MLU_TD" = "CHI_MLU")
+
+#Inserting the mean in Bernies dataset
+Bernie <- merge(Bernie, meanMLUTD, by = "Visit")
+
+#Calculating the absolute difference
+Bernie$AD_TD <- (Bernie$CHI_MLU - Bernie$mean_MLU_TD )
+
+mean(Bernie$AD_TD)
+
+#Subsetting for ASD
+test_ASD <- subset(df_test, Diagnosis == "ASD")
+
+#average for TD child at each visit
+
+meanMLUASD <- aggregate(test_ASD[, 12], list(test_ASD$Visit), mean)
+
+meanMLUASD <- rename(meanMLUASD, c("Visit" = "Group.1", "mean_MLU_ASD" = "x"))
+
+#Inserting the mean in Bernies dataset
+Bernie <- merge(Bernie, meanMLUASD, by = "Visit")
+
+#Calculating the absolute difference
+Bernie$AD_ASD <- (Bernie$CHI_MLU - Bernie$mean_MLU_ASD )
+
+mean(Bernie$AD_ASD)
+
+#Plotting Bernie against means for TD and ASD (geom_smooth er ikke nødvendigvis det pæneste men synes det giver mening at se at Bernie er nogenlunde paralel med TD i udvikling. Måske fjerne SE)
+ggplot(Bernie) +
+  geom_point(aes(y=mean_MLU_TD , x=Visit, color = "red" , )) +
+  geom_smooth(aes(y=mean_MLU_TD, x=Visit, color = "red"), method = lm , alpha = 0) +
+  geom_point(aes(y=mean_MLU_ASD , x=Visit, color = "blue")) + 
+  geom_smooth(aes(y=mean_MLU_ASD, x=Visit, color = "blue"), method = lm, alpha = 0) +
+  geom_point(aes(y=CHI_MLU, x=Visit, color = "green")) +
+  geom_smooth(aes(y=CHI_MLU, x=Visit, color = "green"), method = lm, alpha = 0) +
+  scale_color_discrete(name="Diagnosis",
+                         breaks=c("red", "green", "blue"),
+                         labels=c("mean TD", "Bernie", "mean ASD")) +
+  ylab("MLU")
+```
+
+
+
+- how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child) #See below
+```{r}
+
+Bernie$predict_max <- predict(bmaxv, newdata = Bernie, allow.new.levels = TRUE)
+
+
+Bernie$dif_max <- (Bernie$predict_max - Bernie$CHI_MLU) 
+
+Bernie$dif_max 
+
+rmse(Bernie$CHI_MLU, predict_bmax) #0.85
+
+ggplot(Bernie)+
+  geom_point(aes(y = predict_max , x = Visit, color = "red")) +
+  geom_point(aes(y = CHI_MLU, x = Visit, color = "blue")) +
+  scale_color_discrete(name=" ",
+                         breaks=c("red", "blue"),
+                         labels=c("Predicted", "Bernie MLU")) +
+  ylab("MLU")
+```
+
