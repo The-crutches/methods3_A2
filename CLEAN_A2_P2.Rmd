@@ -124,12 +124,124 @@ mean(df_test$CHI_MLU)
 - Use cross-validation to compare your model from last week with the basic model (Child MLU as a function of Time and Diagnosis, and don't forget the random effects!)
 
 ```{r}
+#Comparing basic model with our model in the same folds
 
+#Creating folds 
+k = 6
+folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+
+#Creating empty lists for RMSE values
+trainRMSE_our= rep(NA, k)
+trainRMSE_simple= rep(NA,k)
+testRMSE_our = rep(NA, k)
+testRMSE_simple = rep(NA, k)
+
+#Looping through each loop 
+i = 1
+for (fold in folds){
+  #Creating training data set and test data set 
+  train_os = subset(train_data, !(Child.ID %in% fold))
+  test_os = subset(train_data, Child.ID %in% fold)
+  #Making models
+  our_model = lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_os, REML = F)
+  simple_model = lmer(CHI_MLU ~Visit*Diagnosis + (1+Visit|Child.ID), train_os, REML = FALSE)
+  #Making prediction columns predicting the model
+    #For our model
+  test_os$prediction = predict(our_model, test_os, allow.new.levels = TRUE)
+  train_os$prediction = fitted(our_model)
+    #For simple model
+  test_os$prediction2 = predict(simple_model, test_os, allow.new.levels = TRUE)
+  train_os$prediction2 = fitted(simple_model)
+  #Calculating RMSE values 
+    #For our model
+  trainRMSE_our[i] = RMSE(train_os$CHI_MLU, fitted(our_model))
+  testRMSE_our[i] = RMSE(test_os$CHI_MLU, test_os$prediction)
+    #For simple model 
+  trainRMSE_simple[i] = RMSE(train_os$CHI_MLU, fitted(simple_model))
+  testRMSE_simple[i] = RMSE(test_os$CHI_MLU, test_os$prediction2)
+  i = i + 1
+}
+
+#Making dataframe with RMSE values
+  #Making difference columns for our model
+diff_our <- trainRMSE_our - testRMSE_our
+  #Making difference columns for simple model
+diff_simple <- trainRMSE_simple - testRMSE_simple
+  
+#Dataframe
+our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, diff_our, trainRMSE_simple, testRMSE_simple, diff_simple)
+  #Fold column
+our_vs_simple$folds <- c(1:6)
+
+#Running t-test testing for significant difference between the to differences 
+ggplot(our_vs_simple)+
+  geom_point(aes(x=folds, y = diff_simple, fill = "blue"))+
+  geom_point(aes(x=folds, y= diff_our, color = "red"))
+  
+
+#Mean (we want closest to 0)
+  #our model on the training data is closest to the test data (report mean and SD)
+mean(our_vs_simple$diff_our)
+sd(our_vs_simple$diff_our)
+mean(our_vs_simple$diff_simple)
+sd(our_vs_simple$diff_simple)
 ```
+
 
 - Now try to find the best possible predictive model of ChildMLU, that is, the one that produces the best cross-validated results.
 
 ```{r}
+# Finding the best model in different folds for simplicity 
+  #Cross validation function
+    #Making function that allows us to just put a test in 
+cross_valid <- function(data, k, m){
+  #Creating folds
+  folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+#Creating empty lists
+trainRMSE = rep(NA, k)
+testRMSE = rep(NA, k)
+
+#Making loop
+i = 1
+for (fold in folds){
+  #Datasets
+  train = subset(train_data, !(Child.ID %in% fold))
+  test = subset(train_data, Child.ID %in% fold)
+  #Model
+  m = lmer(m, train, REML = FALSE)
+  #Prediction columns
+  test$prediction = predict(m, test, allow.new.levels = TRUE)
+  train$prediction = fitted(m)
+  #Calculating RMSE
+  trainRMSE[i] = RMSE(train$CHI_MLU, fitted(m))
+  testRMSE[i] = RMSE(test$CHI_MLU, test$prediction)
+  i = i + 1
+}
+#Putting results into dataframe 
+result = data.frame(trainRMSE, testRMSE)
+  return(result)
+}
+
+#testing it
+growth <-  CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + (1+I(Visit^2)|Child.ID)
+test_1 <- cross_valid(train_data, 6, growth)
+test_1$diff1 <- test_1$trainRMSE - test_1$testRMSE
+
+basic <-  CHI_MLU ~ Visit*Diagnosis + (1+Visit|Child.ID)
+test_2 <- cross_valid(train_data, 6, basic)
+test_2$diff2 <- test_2$trainRMSE - test_2$testRMSE
+
+bmaxv <-  lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_os, REML = F)
+test_3 <- cross_valid(train_data, 6, bmaxv)
+test_3$diff3 <- test_3$trainRMSE - test_3$testRMSE
+
+#Mean and sd on the test results 
+mean(test_1$diff1)
+sd(test_1$diff1)
+mean(test_2$diff2)
+sd(test_2$diff2)
+mean(test_3$diff3)
+sd(test_3$diff3)
 
 ```
 
