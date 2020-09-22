@@ -2,11 +2,11 @@
 title: "CLEAN_A2_P2"
 author: "Study group 4"
 date: "21/9/2020"
-output: html_document
+output: pdf_document
 ---
-#Loading packages
+*Loading packages*
 ```{r}
-pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret, data.table)
+pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret, data.table, tidyr)
 ```
 
 
@@ -23,7 +23,11 @@ train_df <- train_df[!is.na(train_df$Socialization), 1:22]
 train_df <- train_df[!is.na(train_df$CHI_MLU), 1:22] 
 
 # Model from last time 
-max <-lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_df, REML = F)
+max <-lmer(CHI_MLU ~ 
+             I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+
+             (1|Child.ID), 
+           train_df, 
+           REML = F)
 
 ```
 
@@ -138,7 +142,8 @@ for (fold in folds){
   train_os = subset(train_df, !(Child.ID %in% fold))
   test_os = subset(train_df, Child.ID %in% fold)
   #Making models
-  our_model = lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_os, REML = F)
+  our_model = lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1 + 
+                     (1|Child.ID), train_os, REML = F)
   simple_model = lmer(CHI_MLU ~Visit*Diagnosis + (1+Visit|Child.ID), train_os, REML = FALSE)
   #Making prediction columns predicting the model
     #For our model
@@ -164,14 +169,17 @@ diff_max <- trainRMSE_our - testRMSE_our
 diff_simple <- trainRMSE_simple - testRMSE_simple
   
 #Dataframe
-our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, diff_max, trainRMSE_simple, testRMSE_simple, diff_simple)
+our_vs_simple <- data.frame(trainRMSE_our, testRMSE_our, diff_max, 
+                            trainRMSE_simple, testRMSE_simple, diff_simple)
   #Fold column
 our_vs_simple$folds <- c(1:6)
 
 #Plotting our model against the simple model
 our_vs_simple$folds <- as.factor(our_vs_simple$folds)
-diff_df <- select(our_vs_simple, diff_simple, diff_max, folds) #selecting relevant data
-diff_df <- gather(our_vs_simple, difference, value, diff_max, diff_simple, factor_key = T) #changing data format to long
+diff_df <- select(our_vs_simple, diff_simple, diff_max, folds) 
+#selecting relevant data
+diff_df <- gather(our_vs_simple, difference, value, diff_max, diff_simple, factor_key = T) 
+#changing data format to long
 
 #plotting
 diff_df$difference <- as.factor(diff_df$difference)
@@ -180,7 +188,7 @@ ggplot(diff_df, aes(x = folds, y = value)) +
   ylab('Difference in RMSE values') + 
   xlab('Fold number')
 
-  # clearly 'our' model has the shortest distance to zero, and therefore it is better than the simple model. 
+#clearly 'our' model has the shortest distance to zero, and therefore it is better than the simple model. 
 
 
 #Mean (we want closest to 0)
@@ -199,7 +207,7 @@ sd(our_vs_simple$diff_simple)
   #Cross validation function
     #Out of the function we create some folds 
 k = 6
-folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+folds = createFolds(unique(train_df$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
 
     #Making function that allows us to just put a test in 
 cross_valid <- function(data, m){
@@ -263,8 +271,8 @@ m5 <- mean(test_5$diff5)
 sd5 <- sd(test_5$diff5)
 
 #Making dataframe
-models <- c(growth, bmaxnv, bmaxv, bv, bn) %>% 
-  as.character(models)
+models <- c(growth, bmaxnv, bmaxv, bv, bn)
+models <- as.character(models)
 meansRMSE <- c(m1,m2,m3,m4,m5)
 sdRMSE <- c(sd1,sd2,sd3,sd4,sd5)
 
