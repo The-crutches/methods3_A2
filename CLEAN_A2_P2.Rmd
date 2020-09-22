@@ -19,8 +19,8 @@ pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret, data.table)
 
 # Load training Data
 train_df <- read_csv("data_clean.csv")
-train_df <- train_df[!is.na(train_df$Socialization), 1:20] 
-train_df <- train_df[!is.na(train_df$CHI_MLU), 1:20] 
+train_df <- train_df[!is.na(train_df$Socialization), 1:22] 
+train_df <- train_df[!is.na(train_df$CHI_MLU), 1:22] 
 
 # Model from last time 
 max <-lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_df, REML = F)
@@ -170,7 +170,7 @@ our_vs_simple$folds <- c(1:6)
 
 #Plotting our model against the simple model
 our_vs_simple$folds <- as.factor(our_vs_simple$folds)
-our_vs_simple <- select(our_vs_simple, diff_simple, diff_max, folds) #selecting relevant data
+diff_df <- select(our_vs_simple, diff_simple, diff_max, folds) #selecting relevant data
 diff_df <- gather(our_vs_simple, difference, value, diff_max, diff_simple, factor_key = T) #changing data format to long
 
 #plotting
@@ -197,10 +197,13 @@ sd(our_vs_simple$diff_simple)
 ```{r}
 # Finding the best model in different folds for simplicity 
   #Cross validation function
+    #Out of the function we create some folds 
+k = 6
+folds = createFolds(unique(train_data$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+
     #Making function that allows us to just put a test in 
-cross_valid <- function(data, k, m){
-  #Creating folds
-  folds = createFolds(unique(train_df$Child.ID), k = k, list = TRUE, returnTrain = FALSE)
+cross_valid <- function(data, m){
+  
 #Creating empty lists
 trainRMSE = rep(NA, k)
 testRMSE = rep(NA, k)
@@ -228,24 +231,44 @@ result = data.frame(trainRMSE, testRMSE)
 
 #testing it
 growth <-  CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + (1+I(Visit^2)|Child.ID)
-test_1 <- cross_valid(train_df, 6, growth)
+test_1 <- cross_valid(train_df, growth)
 test_1$diff1 <- test_1$trainRMSE - test_1$testRMSE
 
-basic <-  CHI_MLU ~ Visit*Diagnosis + (1+Visit|Child.ID)
-test_2 <- cross_valid(train_df, 6, basic)
+bmaxnv <-  CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + nonVerbalIQ1+(1|Child.ID)
+test_2 <- cross_valid(train_df, bmaxnv)
 test_2$diff2 <- test_2$trainRMSE - test_2$testRMSE
 
-bmaxv <-  lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID), train_os, REML = F)
-test_3 <- cross_valid(train_df, 6, bmaxv)
+bmaxv <-  CHI_MLU ~ I(Visit^2)+Visit*Diagnosis+ Socialization*Diagnosis + verbalIQ1+(1|Child.ID)
+test_3 <- cross_valid(train_df, bmaxv)
 test_3$diff3 <- test_3$trainRMSE - test_3$testRMSE
 
+bv <-  CHI_MLU ~ I(Visit^2)+Visit*Diagnosis + verbalIQ1+(1|Child.ID)
+test_4 <- cross_valid(train_df, bv)
+test_4$diff4 <- test_4$trainRMSE - test_4$testRMSE
+
+bn <-  CHI_MLU ~ I(Visit^2)+Visit*Diagnosis + nonVerbalIQ1+(1|Child.ID)
+test_5 <- cross_valid(train_df, bn)
+test_5$diff5 <- test_5$trainRMSE - test_5$testRMSE
+
 #Mean and sd on the test results 
-mean(test_1$diff1)
-sd(test_1$diff1)
-mean(test_2$diff2)
-sd(test_2$diff2)
-mean(test_3$diff3)
-sd(test_3$diff3)
+m1 <- mean(test_1$diff1)
+sd1 <- sd(test_1$diff1)
+m2 <- mean(test_2$diff2)
+sd2 <- sd(test_2$diff2)
+m3 <- mean(test_3$diff3)
+sd3 <- sd(test_3$diff3)
+m4 <- mean(test_4$diff4)
+sd4 <- sd(test_4$diff4)
+m5 <- mean(test_5$diff5)
+sd5 <- sd(test_5$diff5)
+
+#Making dataframe
+models <- c(growth, bmaxnv, bmaxv, bv, bn) %>% 
+  as.character(models)
+meansRMSE <- c(m1,m2,m3,m4,m5)
+sdRMSE <- c(sd1,sd2,sd3,sd4,sd5)
+
+comparison_df <- data.frame(models, meansRMSE, sdRMSE)
 
 ```
 
