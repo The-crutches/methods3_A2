@@ -38,6 +38,56 @@ You will be using:
 - extend() to simulate more participants
 
 ```{r}
+
+pacman::p_load(tidyverse, lme4, simr)
+
+train <- read.csv("data_clean.csv")
+test <- read.csv("df_test.csv")
+
+#rename participants
+
+#Saved by Sarah
+df <- read.csv("Merged_df.csv")
+
+df[,1] = NULL
+df[,23:24] = NULL
+
+#creatin new df with only the interesting variables
+df_new <- subset(df, select = c("Child.ID", "Visit", "Diagnosis", "verbalIQ1", "CHI_MLU"))
+
+#remove NA
+df_new <- df_new[!is.na(df_new$Child.ID), 1:5]
+df_new <- df_new[!is.na(df_new$Visit), 1:5]
+df_new <- df_new[!is.na(df_new$Diagnosis), 1:5]
+df_new <- df_new[!is.na(df_new$verbalIQ1), 1:5]
+df_new <- df_new[!is.na(df_new$CHI_MLU), 1:5]
+
+
+
+```
+
+
+```{r}
+library(simr)
+#favorite model from last time
+m = lmer(CHI_MLU ~ I(Visit^2)+Visit*Diagnosis + verbalIQ1+(1|Child.ID), df_new, REML = F)
+summary(m)
+
+#estimated effect size
+powerVD = powerSim(m,fixed("Visit:Diagnosis"),nsim=20)
+powerVD
+powerI = powerSim(m, fixed("verbalIQ1"), nsim=20)
+powerI
+
+
+fixef(m)["Visit:DiagnosisTD"] <- 0.25 #interaction is 0.25 
+fixef(m)["verbalIQ1"] <- 0.07
+powerCurveVD = powerCurve(m,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+powerCurveI = powerCurve(m,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+plot(powerCurveVD)
+plot(powerCurveI)
+
+
 ```
 
 
@@ -51,6 +101,16 @@ How would you perform a more conservative power analysis?
 - Report the power analysis and comment on what you can (or cannot) use its estimates for.
 
 ```{r}
+
+
+fixef(m)["Visit:DiagnosisTD"] <- 0.10  #this seems to be better
+fixef(m)["verbalIQ1"] <- 0.01 #maybe this is too low
+powerCurveVD = powerCurve(m,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+powerCurveI = powerCurve(m,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+plot(powerCurveVD)
+plot(powerCurveI)
+
+
 ```
 
 
@@ -59,4 +119,19 @@ How would you perform a more conservative power analysis?
 Assume you have only the resources to collect 30 kids (15 with ASD and 15 TDs). Identify the power for each relevant effect and discuss whether it's worth to run the study and why
 
 ```{r}
+#extending participants
+mext <- extend(m, along="Child.ID", n=30)
+power_extVD = powerSim(mext,fixed("Visit:Diagnosis"),nsim=50)
+power_extVD #70% 
+power_extI = powerSim(mext,fixed("verbalIQ1"),nsim=50)
+power_extI #18%
+
+fixef(mext)["Visit:DiagnosisTD"] <- 0.1
+fixef(mext)["verbalIQ1"] <- 0.01
+
+powerCurve_extVD = powerCurve(mext,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+plot(powerCurve_extVD) #doesnt seem like its worth it with the minimun effect size
+powerCurve_extI = powerCurve(mext,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+plot(powerCurve_extI) #definitely not worth it here! i could imagine that setting the effect size higher would improve but still not make it worth it as we saw in exercise 1
 ```
+
