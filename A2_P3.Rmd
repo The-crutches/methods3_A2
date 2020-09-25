@@ -142,5 +142,5 @@ plot(powerCurveVD3)
 
 powerCurveI3 = powerCurve(m3,fixed("verbalIQ1"),along="Child.ID", nsim=50)
 plot(powerCurveI3) 
-  #definitely not worth it here! i could imagine that setting the effect size higher would improve but still not make it worth it as we saw in exercise 1
+  #definitely not worth it here! i could imagine that setting the effect size higher would improve but still not make it worth it as we saw in exercise 1 yes yes
 ```
