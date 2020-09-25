@@ -119,10 +119,13 @@ Assume you only have the resources to collect 30 kids (15 with ASD and 15 TDs). 
 
 ```{r}
 #Making new model
-m3 <- m2
+m3 <- m1
 
 #Extending participants
-m3 <- extend(m3, along="Child.ID", n=30)
+  #extended by visit and diagnosis, in order to get 15 participants with each diagnosis, and still maintaining all visits pr. subject. 
+m3 <- extend(m3, within ="Visit + Diagnosis", n=15)
+m3_data <- getData(m3) 
+
 
 #Assesing power with no change in the fixed effects
   #Interaction
@@ -134,10 +137,10 @@ powerI3 = powerSim(m3,fixed("verbalIQ1"),nsim = 200)
 powerI3 
 
 #Power curves 
-powerCurveVD3 = powerCurve(m3,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+powerCurveVD3 = powerCurve(m3,fixed("Visit:Diagnosis"),along="Child.ID", nsim=200)
 plot(powerCurveVD3) 
 
-powerCurveI3 = powerCurve(m3,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+powerCurveI3 = powerCurve(m3,fixed("verbalIQ1"),along="Child.ID", nsim=200)
 plot(powerCurveI3) 
 
 #Setting new fixed effect as the ones we did before 
@@ -147,11 +150,11 @@ fixef(m4)["Visit:DiagnosisTD"] <- 0.1
 fixef(m4)["verbalIQ1"] <- 0.01
 
 #Powercurves with new fixed effects 
-powerCurveVD4 = powerCurve(m4,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+powerCurveVD4 = powerCurve(m4,fixed("Visit:Diagnosis"),along="Child.ID", nsim=200)
 powerCurveVD4
 plot(powerCurveVD4) 
 
-powerCurveI4 = powerCurve(m4,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+powerCurveI4 = powerCurve(m4,fixed("verbalIQ1"),along="Child.ID", nsim=200)
 powerCurveVD4
 plot(powerCurveI4) 
 
