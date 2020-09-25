@@ -41,11 +41,13 @@ df <- subset(df, select = c(Child.ID, Visit, Diagnosis, CHI_MLU, verbalIQ1))
 #Removing Na's 
 df <- df[!is.na(df$CHI_MLU), 1:5]
 
-df$Child.ID <- as.factor(df$Child.ID)
+df <- df %>% 
+  mutate(Child.ID = as.factor(Child.ID),
+         Diagnosis = as.factor(Diagnosis))
 
 #Favorite model, we chose to remove the interaction between socialization and diagnosis, since it does not add very much to the model and to keep it simple 
 m1 <- lme4::lmer(CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + verbalIQ1+(1|Child.ID), df, REML = FALSE)
-summary(m)
+summary(m1)
 
 #Power estimation
   #For interaction
@@ -59,56 +61,50 @@ powerI1 = powerSim(m1, fixed("verbalIQ1"), nsim=200)
 ```{r}
 #estimated effect size
   #For interaction
-powerVD
+powerVD1
   #For Verbal IQ
-powerI
+powerI1
 ```
 
 - Test how many participants you would have to have to replicate the findings (assuming the findings are correct)
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #How many participants? 
   #For interaction
-powerCurveVD1 = powerCurve(m1,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+powerCurveVD1 = powerCurve(m1,fixed("Visit:Diagnosis"),along="Child.ID", nsim=200)
   #For verbal IQ
-powerCurveI1 = powerCurve(m1,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+powerCurveI1 = powerCurve(m1,fixed("verbalIQ1"),along="Child.ID", nsim=200)
   #Plots
+print(powerCurveVD1)
+print(powerCurveI1)
 plot(powerCurveVD1)
 plot(powerCurveI1)
 ```
-
-
-N.B. Remember that main effects are tricky once you have interactions in the model (same for 2-way interactions w 3-way interactions in the model). If you want to test the power of main effects, run a model excluding the interactions.
-N.B. Check this paper: https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.12504
-You will be using:
-- powerSim() to calculate power
-- powerCurve() to estimate the needed number of participants
-- extend() to simulate more participants
 
 ### Exercise 2
 
 How would you perform a more conservative power analysis?
 - Identify and justify a minimum effect size for each of your relevant effects
-
-
 - take the model from exercise 1 and replace the effects with the minimum effect size that you'd accept.
 
 ```{r}
-#Making a new model to run the replaced effects with the minimu effect size 
-m1 <- m2
+#Making a new model to run the replaced effects with the minimum effect size 
+m2 <- m1
 
 #Setting the fixed effects 
   #For interaction
-fixef(m2)["Visit:DiagnosisTD"] <- 0.10  #this seems to be better
+fixef(m2)["Visit:DiagnosisTD"] <- 0.10
   #For verbal IQ
-fixef(m2)["verbalIQ1"] <- 0.01 #maybe this is too low
+fixef(m2)["verbalIQ1"] <- 0.03 
 ```
 - assess the power curve by Child.ID, identifying an ideal number of participants to estimate each effect
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #Assesing power
 powerCurveVD2 = powerCurve(m2, fixed("Visit:Diagnosis"), along = "Child.ID", nsim = 200)
 powerCurveI2 = powerCurve(m2, fixed("verbalIQ1"), along = "Child.ID", nsim = 200)
+print(powerCurveVD2)
+print(powerCurveI2)
 
 #Plotting curves 
 plot(powerCurveVD2)
@@ -116,12 +112,10 @@ plot(powerCurveI2)
 ```
 
 - if your power estimates do not reach an acceptable threshold simulate additional participants and repeat the previous analysis
-- Report the power analysis and comment on what you can (or cannot) use its estimates for.
-
 
 ### Exercise 3
 
-Assume you have only the resources to collect 30 kids (15 with ASD and 15 TDs). Identify the power for each relevant effect and discuss whether it's worth to run the study and why
+Assume you only have the resources to collect 30 kids (15 with ASD and 15 TDs). Identify the power for each relevant effect and discuss whether it's worth to run the study and why
 
 ```{r}
 #Making new model
@@ -130,36 +124,23 @@ m3 <- m2
 #Extending participants
 m3 <- extend(m3, along="Child.ID", n=30)
 
-#Assesing power with no change in the fixed effects
-  #Interaction
-powerVD3 = powerSim(m3,fixed("Visit:Diagnosis"),nsim=200)
-powerVD3
+#Assesing power
+powerVD3 = powerSim(m3,fixed("Visit:Diagnosis"),nsim=50)
+powerVD3 #70% 
+powerI3 = powerSim(m3,fixed("verbalIQ1"),nsim=50)
+powerI3 #18%
 
-  #Verbal IQ
-powerI3 = powerSim(m3,fixed("verbalIQ1"),nsim = 200)
-powerI3 
+#Setting new fixed effect
+fixef(m3)["Visit:DiagnosisTD"] <- 0.1
+fixef(m3)["verbalIQ1"] <- 0.01
 
-#Power curves 
+#Powercurves
+
 powerCurveVD3 = powerCurve(m3,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
 plot(powerCurveVD3) 
+  #doesnt seem like its worth it with the minimun effect size
 
 powerCurveI3 = powerCurve(m3,fixed("verbalIQ1"),along="Child.ID", nsim=50)
 plot(powerCurveI3) 
-
-#Setting new fixed effect as the ones we did before 
-m4 <- m3
-
-fixef(m4)["Visit:DiagnosisTD"] <- 0.1
-fixef(m4)["verbalIQ1"] <- 0.01
-
-#Powercurves with new fixed effects 
-powerCurveVD4 = powerCurve(m4,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
-powerCurveVD4
-plot(powerCurveVD4) 
-
-powerCurveI4 = powerCurve(m4,fixed("verbalIQ1"),along="Child.ID", nsim=50)
-powerCurveVD4
-plot(powerCurveI4) 
-
   #definitely not worth it here! i could imagine that setting the effect size higher would improve but still not make it worth it as we saw in exercise 1
 ```
