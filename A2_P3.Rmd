@@ -1,12 +1,17 @@
 ---
 title: "Assignment 1 - Language Development in ASD - Power and simulations"
-author: "[YOUR NAME]"
-date: "[DATE]"
+author: "Studygroup 4"
+date: "25-09-2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#loading packages 
+pacman::p_load(tidyverse, lme4, simr)
 ```
 
 ## Welcome to the third exciting part of the Language Development in ASD exercise
@@ -27,8 +32,51 @@ The list above is also what you should discuss in your code-less report.
 
 How much power does your study have (if your model estimates are quite right)?
 - Load your dataset (both training and testing), fit your favorite model, assess power for your effects of interest (probably your interactions).
+
+```{r}
+#loading data merged data from Sarahs code
+df <- read_csv("Merged_df.csv")
+df <- subset(df, select = c(Child.ID, Visit, Diagnosis, CHI_MLU, verbalIQ1))
+
+#Removing Na's 
+df <- df[!is.na(df$CHI_MLU), 1:5]
+
+df$Child.ID <- as.factor(df$Child.ID)
+
+#Favorite model, we chose to remove the interaction between socialization and diagnosis, since it does not add very much to the model and to keep it simple 
+m1 <- lme4::lmer(CHI_MLU ~ I(Visit^2) + Visit*Diagnosis + verbalIQ1+(1|Child.ID), df, REML = FALSE)
+summary(m)
+
+#Power estimation
+  #For interaction
+powerVD1 = powerSim(m1,fixed("Visit:Diagnosis"),nsim = 200)
+  #For verbal IQ
+powerI1 = powerSim(m1, fixed("verbalIQ1"), nsim=200)
+```
+
 - Report the power analysis and comment on what you can (or cannot) use its estimates for.
+
+```{r}
+#estimated effect size
+  #For interaction
+powerVD
+  #For Verbal IQ
+powerI
+```
+
 - Test how many participants you would have to have to replicate the findings (assuming the findings are correct)
+
+```{r}
+#How many participants? 
+  #For interaction
+powerCurveVD1 = powerCurve(m1,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+  #For verbal IQ
+powerCurveI1 = powerCurve(m1,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+  #Plots
+plot(powerCurveVD1)
+plot(powerCurveI1)
+```
+
 
 N.B. Remember that main effects are tricky once you have interactions in the model (same for 2-way interactions w 3-way interactions in the model). If you want to test the power of main effects, run a model excluding the interactions.
 N.B. Check this paper: https://besjournals.onlinelibrary.wiley.com/doi/full/10.1111/2041-210X.12504
@@ -37,21 +85,38 @@ You will be using:
 - powerCurve() to estimate the needed number of participants
 - extend() to simulate more participants
 
-```{r}
-```
-
-
 ### Exercise 2
 
 How would you perform a more conservative power analysis?
 - Identify and justify a minimum effect size for each of your relevant effects
+
+
 - take the model from exercise 1 and replace the effects with the minimum effect size that you'd accept.
-- assess the power curve by Child.ID, identifying an ideal number of participants to estimate each effect
-- if your power estimates do not reach an acceptable threshold simulate additional participants and repeat the previous analysis
-- Report the power analysis and comment on what you can (or cannot) use its estimates for.
 
 ```{r}
+#Making a new model to run the replaced effects with the minimu effect size 
+m1 <- m2
+
+#Setting the fixed effects 
+  #For interaction
+fixef(m2)["Visit:DiagnosisTD"] <- 0.10  #this seems to be better
+  #For verbal IQ
+fixef(m2)["verbalIQ1"] <- 0.01 #maybe this is too low
 ```
+- assess the power curve by Child.ID, identifying an ideal number of participants to estimate each effect
+
+```{r}
+#Assesing power
+powerCurveVD2 = powerCurve(m2, fixed("Visit:Diagnosis"), along = "Child.ID", nsim = 200)
+powerCurveI2 = powerCurve(m2, fixed("verbalIQ1"), along = "Child.ID", nsim = 200)
+
+#Plotting curves 
+plot(powerCurveVD2)
+plot(powerCurveI2)
+```
+
+- if your power estimates do not reach an acceptable threshold simulate additional participants and repeat the previous analysis
+- Report the power analysis and comment on what you can (or cannot) use its estimates for.
 
 
 ### Exercise 3
@@ -59,4 +124,29 @@ How would you perform a more conservative power analysis?
 Assume you have only the resources to collect 30 kids (15 with ASD and 15 TDs). Identify the power for each relevant effect and discuss whether it's worth to run the study and why
 
 ```{r}
+#Making new model
+m3 <- m2
+
+#Extending participants
+m3 <- extend(m3, along="Child.ID", n=30)
+
+#Assesing power
+powerVD3 = powerSim(m3,fixed("Visit:Diagnosis"),nsim=50)
+powerVD3 #70% 
+powerI3 = powerSim(m3,fixed("verbalIQ1"),nsim=50)
+powerI3 #18%
+
+#Setting new fixed effect
+fixef(m3)["Visit:DiagnosisTD"] <- 0.1
+fixef(m3)["verbalIQ1"] <- 0.01
+
+#Powercurves
+
+powerCurveVD3 = powerCurve(m3,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+plot(powerCurveVD3) 
+  #doesnt seem like its worth it with the minimun effect size
+
+powerCurveI3 = powerCurve(m3,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+plot(powerCurveI3) 
+  #definitely not worth it here! i could imagine that setting the effect size higher would improve but still not make it worth it as we saw in exercise 1
 ```
