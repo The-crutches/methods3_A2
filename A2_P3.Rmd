@@ -130,23 +130,36 @@ m3 <- m2
 #Extending participants
 m3 <- extend(m3, along="Child.ID", n=30)
 
-#Assesing power
-powerVD3 = powerSim(m3,fixed("Visit:Diagnosis"),nsim=50)
-powerVD3 #70% 
-powerI3 = powerSim(m3,fixed("verbalIQ1"),nsim=50)
-powerI3 #18%
+#Assesing power with no change in the fixed effects
+  #Interaction
+powerVD3 = powerSim(m3,fixed("Visit:Diagnosis"),nsim=200)
+powerVD3
 
-#Setting new fixed effect
-fixef(m3)["Visit:DiagnosisTD"] <- 0.1
-fixef(m3)["verbalIQ1"] <- 0.01
+  #Verbal IQ
+powerI3 = powerSim(m3,fixed("verbalIQ1"),nsim = 200)
+powerI3 
 
-#Powercurves
-
+#Power curves 
 powerCurveVD3 = powerCurve(m3,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
 plot(powerCurveVD3) 
-  #doesnt seem like its worth it with the minimun effect size
 
 powerCurveI3 = powerCurve(m3,fixed("verbalIQ1"),along="Child.ID", nsim=50)
 plot(powerCurveI3) 
+
+#Setting new fixed effect as the ones we did before 
+m4 <- m3
+
+fixef(m4)["Visit:DiagnosisTD"] <- 0.1
+fixef(m4)["verbalIQ1"] <- 0.01
+
+#Powercurves with new fixed effects 
+powerCurveVD4 = powerCurve(m4,fixed("Visit:Diagnosis"),along="Child.ID", nsim=50)
+powerCurveVD4
+plot(powerCurveVD4) 
+
+powerCurveI4 = powerCurve(m4,fixed("verbalIQ1"),along="Child.ID", nsim=50)
+powerCurveVD4
+plot(powerCurveI4) 
+
   #definitely not worth it here! i could imagine that setting the effect size higher would improve but still not make it worth it as we saw in exercise 1
 ```
