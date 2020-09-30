@@ -73,7 +73,7 @@ powerI1
 ```{r message=FALSE, warning=FALSE}
 #How many participants? 
   #For interaction
-powerCurveVD1 = powerCurve(m1,fixed("Visit:Diagnosis"), along="Child.ID", nsim=200)
+powerCurveVD1 = powerCurve(m1,fixed("Visit:Diagnosis"), along="Child.ID", nsim=50)
   #For verbal IQ
 powerCurveI1 = powerCurve(m1,fixed("verbalIQ1"), along="Child.ID", nsim=200)
   #Plots
@@ -119,7 +119,7 @@ plot(powerCurveI2)
 
 Assume you only have the resources to collect 30 kids (15 with ASD and 15 TDs). Identify the power for each relevant effect and discuss whether it's worth to run the study and why
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 #Making new model
 m3 <- m1
 
