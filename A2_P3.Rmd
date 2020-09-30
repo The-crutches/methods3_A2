@@ -132,18 +132,20 @@ m3_data <- getData(m3)
 
 #Assesing power with no change in the fixed effects
   #Interaction
-powerVD3 = powerSim(m3,fixed("Visit:Diagnosis"),nsim=200)
+powerVD3 = powerSim(m3,fixed("Visit:Diagnosis"),nsim=200, seed = 123)
 powerVD3
 
   #Verbal IQ
-powerI3 = powerSim(m3,fixed("verbalIQ1"),nsim = 200)
+powerI3 = powerSim(m3,fixed("verbalIQ1"),nsim = 200, seed = 123)
 powerI3 
 
 #Power curves 
-powerCurveVD3 = powerCurve(m3,fixed("Visit:Diagnosis"),along="Child.ID", nsim=200)
+powerCurveVD3 = powerCurve(m3,fixed("Visit:Diagnosis"),along="Child.ID", nsim=200, seed = 123)
+powerCurveVD3
 plot(powerCurveVD3) 
 
-powerCurveI3 = powerCurve(m3,fixed("verbalIQ1"),along="Child.ID", nsim=200)
+powerCurveI3 = powerCurve(m3,fixed("verbalIQ1"),along="Child.ID", nsim=200, seed = 123)
+powerCurveI3
 plot(powerCurveI3) 
 
 #Setting new fixed effect as the ones we did before 
@@ -152,13 +154,21 @@ m4 <- m3
 fixef(m4)["Visit:DiagnosisTD"] <- 0.1
 fixef(m4)["verbalIQ1"] <- 0.03
 
+#Estimating power with changed effect sizes 
+  #Interaction
+powerVD4 = powerSim(m4,fixed("Visit:Diagnosis"),nsim=200, seed = 123)
+powerVD4
+
+  #Verbal IQ
+powerI4 = powerSim(m4,fixed("verbalIQ1"),nsim = 200, seed = 123)
+powerI4
+
 #Powercurves with new fixed effects 
-powerCurveVD4 = powerCurve(m4,fixed("Visit:Diagnosis"),along="Child.ID", nsim=200)
+powerCurveVD4 = powerCurve(m4,fixed("Visit:Diagnosis"),along="Child.ID", nsim=200, seed = 123)
 powerCurveVD4
 plot(powerCurveVD4) 
 
-powerCurveI4 = powerCurve(m4,fixed("verbalIQ1"),along="Child.ID", nsim=200)
+powerCurveI4 = powerCurve(m4,fixed("verbalIQ1"),along="Child.ID", nsim=200, seed = 123)
 powerCurveVD4
 plot(powerCurveI4) 
-
 ```
