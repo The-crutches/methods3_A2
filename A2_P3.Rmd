@@ -12,9 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 #loading packages 
 pacman::p_load(tidyverse, lme4, simr)
-
-#Setting R's random generator to obtain the same results each time 
-set.seed(123)
 ```
 
 ## Welcome to the third exciting part of the Language Development in ASD exercise
@@ -53,9 +50,9 @@ summary(m1)
 
 #Power estimation
   #For interaction
-powerVD1 = powerSim(m1,fixed("Visit:Diagnosis"), nsim = 200)
+powerVD1 = powerSim(m1,fixed("Visit:Diagnosis"), nsim = 200, seed = 123)
   #For verbal IQ
-powerI1 = powerSim(m1, fixed("verbalIQ1"), nsim=200)
+powerI1 = powerSim(m1, fixed("verbalIQ1"), nsim=200, seed = 123)
 ```
 
 - Report the power analysis and comment on what you can (or cannot) use its estimates for.
@@ -73,9 +70,9 @@ powerI1
 ```{r message=FALSE, warning=FALSE}
 #How many participants? 
   #For interaction
-powerCurveVD1 = powerCurve(m1,fixed("Visit:Diagnosis"), along="Child.ID", nsim=50)
+powerCurveVD1 = powerCurve(m1,fixed("Visit:Diagnosis"), along="Child.ID", nsim=200, seed = 123)
   #For verbal IQ
-powerCurveI1 = powerCurve(m1,fixed("verbalIQ1"), along="Child.ID", nsim=200)
+powerCurveI1 = powerCurve(m1,fixed("verbalIQ1"), along="Child.ID", nsim=200, seed = 123)
   #Plots
 print(powerCurveVD1)
 print(powerCurveI1)
@@ -103,8 +100,8 @@ fixef(m2)["verbalIQ1"] <- 0.03
 
 ```{r message=FALSE, warning=FALSE}
 #Assesing power
-powerCurveVD2 = powerCurve(m2, fixed("Visit:Diagnosis"), along = "Child.ID", nsim = 200)
-powerCurveI2 = powerCurve(m2, fixed("verbalIQ1"), along = "Child.ID", nsim = 200)
+powerCurveVD2 = powerCurve(m2, fixed("Visit:Diagnosis"), along = "Child.ID", nsim = 200, seed = 123)
+powerCurveI2 = powerCurve(m2, fixed("verbalIQ1"), along = "Child.ID", nsim = 200, seed = 123)
 print(powerCurveVD2)
 print(powerCurveI2)
 
