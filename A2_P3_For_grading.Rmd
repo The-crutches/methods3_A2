@@ -34,6 +34,7 @@ How much power does your study have (if your model estimates are quite right)?
 - Load your dataset (both training and testing), fit your favorite model, assess power for your effects of interest (probably your interactions).
 
 ```{r}
+#Sarah
 #loading data merged data from Sarahs code
 df <- read_csv("Merged_df.csv")
 df <- subset(df, select = c(Child.ID, Visit, Diagnosis, CHI_MLU, verbalIQ1))
@@ -68,6 +69,7 @@ powerI1
 - Test how many participants you would have to have to replicate the findings (assuming the findings are correct)
 
 ```{r message=FALSE, warning=FALSE}
+#Martine
 #How many participants? 
   #For interaction
 powerCurveVD1 = powerCurve(m1,fixed("Visit:Diagnosis"), along="Child.ID", nsim=200, seed = 123)
@@ -87,6 +89,7 @@ How would you perform a more conservative power analysis?
 - take the model from exercise 1 and replace the effects with the minimum effect size that you'd accept.
 
 ```{r}
+#Nanna
 #Making a new model to run the replaced effects with the minimum effect size 
 m2 <- m1
 
@@ -99,6 +102,7 @@ fixef(m2)["verbalIQ1"] <- 0.03
 - assess the power curve by Child.ID, identifying an ideal number of participants to estimate each effect
 
 ```{r message=FALSE, warning=FALSE}
+#Kristine
 #Assesing power
 powerCurveVD2 = powerCurve(m2, fixed("Visit:Diagnosis"), along = "Child.ID", nsim = 200, seed = 123)
 powerCurveI2 = powerCurve(m2, fixed("verbalIQ1"), along = "Child.ID", nsim = 200, seed = 123)
@@ -117,6 +121,7 @@ plot(powerCurveI2)
 Assume you only have the resources to collect 30 kids (15 with ASD and 15 TDs). Identify the power for each relevant effect and discuss whether it's worth to run the study and why
 
 ```{r message=FALSE, warning=FALSE}
+#Julie
 #Making new model
 m3 <- m1
 

@@ -16,7 +16,7 @@ pacman::p_load(readr,dplyr,stringr,lmerTest,Metrics,caret, data.table, tidyr)
 - recreate the models you chose last time (just write the model code again and apply it to your training data (from the first assignment))
 
 ```{r}
-
+#Martine
 # Load training Data
 train_df <- read_csv("data_clean.csv")
 train_df <- train_df[!is.na(train_df$Socialization), 1:22] 
@@ -96,6 +96,7 @@ df_test <- df_test[!is.na(df_test$CHI_MLU), 1:20]
 - calculate performance of the model on the training data: root mean square error is a good measure. (Tip: google the function rmse())
 
 ```{r}
+#Nanna
 rmse(train_df$CHI_MLU, fitted(max))
 #0.45
 
@@ -203,6 +204,7 @@ sd(our_vs_simple$diff_simple)
 - Now try to find the best possible predictive model of ChildMLU, that is, the one that produces the best cross-validated results.
 
 ```{r}
+#Julie
 # Finding the best model in different folds for simplicity 
   #Cross validation function
     #Out of the function we create some folds 
@@ -286,6 +288,7 @@ comparison_df <- data.frame(models, meansRMSE, sdRMSE)
 - how does the child fare in ChildMLU compared to the average TD child at each visit? Define the distance in terms of absolute difference between this Child and the average TD.
 
 ```{r}
+#Kristine
 #Finding BERNIE
 Bernie <- subset(df_test, Child.ID == 4)
 mean(Bernie$CHI_MLU)
@@ -344,7 +347,7 @@ ggplot(Bernie) +
 
 - how does the child fare compared to the model predictions at Visit 6? Is the child below or above expectations? (tip: use the predict() function on Bernie's data only and compare the prediction with the actual performance of the child) #See below
 ```{r}
-
+#Sarah
 # predicted values for each visit
 Bernie$predict_max <- predict(max, newdata = Bernie, allow.new.levels = TRUE)
 
